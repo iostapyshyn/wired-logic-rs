@@ -32,22 +32,23 @@ pub struct Circuit {
 }
 
 impl Circuit {
-    pub fn new(filename: &str) -> Result<Self, image::ImageError> {
+    pub fn from_image(filename: &str) -> Result<Self, image::ImageError> {
         let img = image::open(filename)?;
 
         let bounds = img.dimensions();
 
-        let mut states = vec![false; (bounds.0 * bounds.1) as usize];
+        let mut wire = vec![false; (bounds.0 * bounds.1) as usize];
         for i in img.pixels() {
             if i.2 == image::Rgba::<u8>([0x88, 0x00, 0x00, 0xff]) {
-                states[(i.1 * bounds.0 + i.0) as usize] = true;
+                wire[(i.1 * bounds.0 + i.0) as usize] = true;
             }
         }
 
-        Ok(parser::parse(
-            &states,
-            (bounds.0 as usize, bounds.1 as usize),
-        ))
+        Ok(Self::new(&wire, (bounds.0 as usize, bounds.1 as usize)))
+    }
+
+    pub fn new(wire: &[bool], bounds: (usize, usize)) -> Circuit {
+        parser::parse(&wire, bounds)
     }
 
     fn transistors_of(&self, wire: usize) -> Vec<&Transistor> {

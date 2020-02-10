@@ -99,7 +99,7 @@ impl AppState {
 }
 
 pub fn main() {
-    let circuit = Circuit::new("input.gif").unwrap();
+    let circuit = Circuit::from_image("input.gif").unwrap();
     let mut g = AppState::init("wired-rs", circuit);
 
     let mut last_time = time::Instant::now();
