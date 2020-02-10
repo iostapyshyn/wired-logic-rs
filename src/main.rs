@@ -1,4 +1,3 @@
-extern crate rand;
 extern crate sdl2;
 mod wired_logic;
 
@@ -9,7 +8,7 @@ use std::time;
 
 use wired_logic::*;
 
-const CELLSIZE: u32 = 2;
+const CELLSIZE: usize = 2;
 
 mod colors {
     use sdl2::pixels::Color;
@@ -40,8 +39,8 @@ impl AppState {
         let window = video_subsystem
             .window(
                 title,
-                circuit.bounds.0 * CELLSIZE,
-                circuit.bounds.1 * CELLSIZE,
+                (circuit.bounds.0 * CELLSIZE) as u32,
+                (circuit.bounds.1 * CELLSIZE) as u32,
             )
             .position_centered()
             .build()
@@ -79,22 +78,17 @@ impl AppState {
         self.canvas.set_draw_color(colors::VOID);
         self.canvas.clear();
 
-        for i in &self.circuit.wires {
-            self.canvas.set_draw_color(colors::WIRE[i.charge as usize]);
-            /*
-                        self.canvas.set_draw_color(sdl2::pixels::Color::RGB(
-                            rand::thread_rng().gen::<u8>(),
-                            rand::thread_rng().gen::<u8>(),
-                            rand::thread_rng().gen::<u8>(),
-                        ));
-            */
-            for pixel in &i.pixels {
+        for i in 0..self.circuit.state.len() {
+            self.canvas
+                .set_draw_color(colors::WIRE[self.circuit.state[i] as usize]);
+
+            for pixel in &self.circuit.wires[i].pixels {
                 self.canvas
                     .fill_rect(sdl2::rect::Rect::new(
                         (pixel.0 * CELLSIZE) as i32,
                         (pixel.1 * CELLSIZE) as i32,
-                        CELLSIZE,
-                        CELLSIZE,
+                        CELLSIZE as u32,
+                        CELLSIZE as u32,
                     ))
                     .unwrap();
             }
