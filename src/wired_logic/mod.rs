@@ -31,18 +31,33 @@ pub struct Circuit {
     pub state: Vec<u8>,               // current charges of the wires
 }
 
+fn rgba_distance(one: image::Rgba<u8>, other: image::Rgba<u8>) -> usize {
+    let (r, g, b, a) = (
+        (one[0] as i16 - other[0] as i16).abs(),
+        (one[1] as i16 - other[1] as i16).abs(),
+        (one[2] as i16 - other[2] as i16).abs(),
+        (one[3] as i16 - other[3] as i16).abs(),
+    );
+    (r + g + b + a) as usize
+}
+
 impl Circuit {
     pub fn from_image(filename: &str) -> Result<Self, image::ImageError> {
-        let img = image::open(filename)?;
+        const RED_THRESHOLD: usize = 50;
 
+        let img = image::open(filename)?;
         let bounds = img.dimensions();
 
-        let mut wire = vec![false; (bounds.0 * bounds.1) as usize];
-        for i in img.pixels() {
-            if i.2 == image::Rgba::<u8>([0x88, 0x00, 0x00, 0xff]) {
-                wire[(i.1 * bounds.0 + i.0) as usize] = true;
-            }
-        }
+        let wire: Vec<bool> = img
+            .pixels()
+            .map(|i| {
+                if rgba_distance(i.2, image::Rgba([0x88, 0x00, 0x00, 0xff])) < RED_THRESHOLD {
+                    true
+                } else {
+                    false
+                }
+            })
+            .collect();
 
         Ok(Self::new(&wire, (bounds.0 as usize, bounds.1 as usize)))
     }

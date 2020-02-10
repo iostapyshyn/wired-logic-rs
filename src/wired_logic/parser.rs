@@ -55,7 +55,7 @@ impl Parser {
 
         let mut stack = vec![(coord, coord)];
         while let Some((coord, parent)) = stack.pop() {
-            match self.get(coord).unwrap() {
+            match self.get(coord).unwrap_or(&Cell::Void) {
                 Cell::Wire(None) => {
                     if self.is_source(coord) {
                         self.circuit.wires[wire_index].is_source = true;

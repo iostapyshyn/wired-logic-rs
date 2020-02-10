@@ -3,6 +3,7 @@ mod wired_logic;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::keyboard::Mod;
 
 use std::time;
 
@@ -26,6 +27,7 @@ mod colors {
 
 struct AppState {
     running: bool,
+    delay: u128,
     circuit: Circuit,
     canvas: sdl2::render::Canvas<sdl2::video::Window>,
     event_pump: sdl2::EventPump,
@@ -53,6 +55,7 @@ impl AppState {
             running: true,
             circuit,
             canvas,
+            delay: 100,
             event_pump,
         }
     }
@@ -65,6 +68,21 @@ impl AppState {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => self.running = false,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Equals),
+                    keymod: Mod::LSHIFTMOD,
+                    ..
+                } => self.delay += 100,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Minus),
+                    ..
+                } => {
+                    if self.delay > 100 {
+                        self.delay -= 100
+                    } else {
+                        self.delay = 0
+                    }
+                }
                 _ => {}
             }
         }
@@ -99,7 +117,14 @@ impl AppState {
 }
 
 pub fn main() {
-    let circuit = Circuit::from_image("input.gif").unwrap();
+    let filename = if std::env::args().len() != 2 {
+        eprintln!("Usage: {} filename", std::env::args().nth(0).unwrap());
+        std::process::exit(1)
+    } else {
+        std::env::args().last().unwrap()
+    };
+
+    let circuit = Circuit::from_image(&filename).unwrap();
     let mut g = AppState::init("wired-rs", circuit);
 
     let mut last_time = time::Instant::now();
@@ -107,7 +132,7 @@ pub fn main() {
     while g.running {
         g.eventpoll();
 
-        if last_time.elapsed().as_millis() > 0 {
+        if last_time.elapsed().as_millis() > g.delay {
             last_time = time::Instant::now();
             g.update();
         }
