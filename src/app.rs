@@ -4,7 +4,6 @@ extern crate sdl2;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::keyboard::Mod;
 use sdl2::rect::Rect;
 
 use image::RgbaImage;
@@ -13,57 +12,47 @@ use std::time;
 
 use crate::wired_logic::*;
 
-const TIMESTEP: u128 = 50;
-
-mod colors {
-    use sdl2::pixels::Color;
-    pub const VOID: Color = Color::RGB(0x0a, 0x0a, 0x0a);
-    pub const CURSOR: Color = Color::RGB(0xff, 0xff, 0xff);
-    pub const WIRE: [Color; 7] = [
-        Color::RGB(0x88, 0x00, 0x00),
-        Color::RGB(0xff, 0x00, 0x00),
-        Color::RGB(0xff, 0x22, 0x00),
-        Color::RGB(0xff, 0x44, 0x00),
-        Color::RGB(0xff, 0x66, 0x00),
-        Color::RGB(0xff, 0x88, 0x00),
-        Color::RGB(0xff, 0xaa, 0x00),
-    ];
-}
+const TIMESTEP: usize = 10;
+const CURSOR: sdl2::pixels::Color = sdl2::pixels::Color::RGBA(0xff, 0xff, 0xff, 0xff);
 
 #[derive(Clone, Copy, PartialEq)]
 enum State {
     Running,
     Paused,
-    Editing,
+    Changed,
+    Drawing(bool), // true for drawing, false for erasing.
     Quit,
 }
 
 struct Canvas {
     scale: u32,
-    img_tex: sdl2::render::Texture,
+    tex: sdl2::render::Texture,
     ren: sdl2::render::Canvas<sdl2::video::Window>,
 }
 
 pub struct App {
+    img: RgbaImage,
     state: State,
-    dragging: bool,
-    erasing: bool,
-    delay: u128,
+    delay: usize,
     circuit: Circuit,
     canvas: Canvas,
-    img: RgbaImage,
     event_pump: sdl2::EventPump,
+    mouse: (i32, i32),
 }
 
-pub fn init(title: &str, img: RgbaImage) -> App {
+pub fn init(img: RgbaImage) -> App {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let scale = 2;
-
     let bounds = img.dimensions();
+    let dm = video_subsystem.current_display_mode(0).unwrap();
+    let scale = std::cmp::min(
+        4 * dm.w as u32 / 5 / bounds.0,
+        4 * dm.h as u32 / 5 / bounds.1,
+    );
+
     let window = video_subsystem
-        .window(title, bounds.0 * scale, bounds.1 * scale)
+        .window("", bounds.0 * scale, bounds.1 * scale)
         .position_centered()
         .build()
         .unwrap();
@@ -73,26 +62,25 @@ pub fn init(title: &str, img: RgbaImage) -> App {
 
     sdl_context.mouse().show_cursor(false);
 
-    let mut img_tex = ren
+    let circuit = Circuit::new(&img);
+    let tex = ren
         .texture_creator()
-        .create_texture_streaming(sdl2::pixels::PixelFormatEnum::RGBA32, bounds.0, bounds.1)
+        .create_texture(
+            sdl2::pixels::PixelFormatEnum::RGBA32,
+            sdl2::render::TextureAccess::Streaming,
+            bounds.0,
+            bounds.1,
+        )
         .unwrap();
 
-    img_tex.update(None, &img, (bounds.0 * 4) as usize).unwrap();
-
     App {
+        canvas: Canvas { scale, ren, tex },
         state: State::Running,
-        circuit: Circuit::from_image(&img),
-        erasing: false,
-        dragging: false,
+        mouse: (0, 0),
         delay: 0,
+        circuit,
         event_pump,
         img,
-        canvas: Canvas {
-            scale,
-            ren,
-            img_tex,
-        },
     }
 }
 
@@ -108,75 +96,75 @@ impl App {
                     ..
                 } => self.state = State::Quit,
 
-                KeyDown {
-                    keycode, keymod, ..
-                } => match keycode {
-                    Some(Equals) if keymod == Mod::LSHIFTMOD => self.delay += TIMESTEP,
-                    Some(Minus) => {
-                        if self.delay > TIMESTEP {
-                            self.delay -= TIMESTEP
-                        } else {
-                            self.delay = 0
-                        }
-                    }
+                KeyDown { keycode, .. } => match keycode {
+                    Some(K) => self.delay += TIMESTEP,
+                    Some(J) => self.delay = self.delay.saturating_sub(TIMESTEP),
+
                     Some(Space) => {
                         self.state = match self.state {
                             State::Running => State::Paused,
                             State::Paused => State::Running,
-                            State::Editing => {
-                                self.circuit = Circuit::from_image(&self.img);
+                            State::Changed => {
+                                self.circuit = Circuit::new(&self.img);
                                 State::Running
                             }
                             _ => self.state,
                         }
                     }
+
+                    Some(Period) => self.circuit.step_and_render(&mut self.img),
+
+                    Some(Return) => {
+                        self.circuit.state.iter_mut().for_each(|i| *i = 0);
+                        self.circuit.step_and_render(&mut self.img);
+                        self.state = State::Paused;
+                    }
+
                     _ => {}
                 },
 
                 MouseButtonDown { x, y, .. } => {
-                    self.dragging = true;
-                    self.state = State::Editing;
+                    let scale = self.canvas.scale;
 
-                    self.erasing = *self
-                        .img
-                        .get_pixel(x as u32 / self.canvas.scale, y as u32 / self.canvas.scale)
-                        == image::Rgba([0x88, 0x00, 0x00, 0xff]);
-
-                    let color = if self.erasing {
-                        image::Rgba([0x00, 0x00, 0x00, 0xff])
-                    } else {
-                        image::Rgba([0x88, 0x00, 0x00, 0xff])
-                    };
+                    let mut drawing = true;
+                    for i in 0..=MAX_CHARGE {
+                        if *self.img.get_pixel(x as u32 / scale, y as u32 / scale)
+                            == CHARGE[i as usize]
+                        {
+                            drawing = false;
+                        }
+                    }
 
                     self.img.put_pixel(
-                        x as u32 / self.canvas.scale,
-                        y as u32 / self.canvas.scale,
-                        color,
+                        x as u32 / scale,
+                        y as u32 / scale,
+                        if drawing { CHARGE[0] } else { VOID },
                     );
+
+                    self.state = State::Drawing(drawing);
                 }
 
                 MouseMotion {
                     x, y, xrel, yrel, ..
-                } if self.dragging => {
-                    let color = if self.erasing {
-                        image::Rgba([0x00, 0x00, 0x00, 0xff])
-                    } else {
-                        image::Rgba([0x88, 0x00, 0x00, 0xff])
-                    };
-                    let start = (
-                        (x / self.canvas.scale as i32) as f32,
-                        (y / self.canvas.scale as i32) as f32,
-                    );
-                    let end = (
-                        ((x - xrel) / self.canvas.scale as i32) as f32,
-                        ((y - yrel) / self.canvas.scale as i32) as f32,
-                    );
+                } => {
+                    self.mouse = (x, y);
+                    if let State::Drawing(drawing) = self.state {
+                        let scale = self.canvas.scale as f32;
 
-                    imageproc::drawing::draw_line_segment_mut(&mut self.img, start, end, color);
+                        let start = (x as f32 / scale, y as f32 / scale);
+                        let end = (start.0 - xrel as f32 / scale, start.1 - yrel as f32 / scale);
+
+                        imageproc::drawing::draw_line_segment_mut(
+                            &mut self.img,
+                            start,
+                            end,
+                            if drawing { CHARGE[0] } else { VOID },
+                        );
+                    }
                 }
 
                 MouseButtonUp { .. } => {
-                    self.dragging = false;
+                    self.state = State::Changed;
                 }
 
                 _ => {}
@@ -185,62 +173,38 @@ impl App {
     }
 
     fn update(&mut self) {
-        match self.state {
-            State::Running => self.circuit.step(),
-            State::Editing => self
-                .canvas
-                .img_tex
-                .update(None, &self.img, (self.circuit.bounds.0 * 4) as usize)
-                .unwrap(),
-            _ => {}
-        }
-    }
+        let status;
+        let window = self.canvas.ren.window_mut();
+        let _ = window.set_title(match self.state {
+            State::Running => {
+                status = format!("wired-rs: {}ms delay.", self.delay);
+                &status
+            }
+            State::Paused => "wired-rs: paused.",
+            State::Changed | State::Drawing(..) => "wired-rs: modified.",
+            _ => "",
+        });
 
-    fn draw_wire(canvas: &mut Canvas, (wire, state): (&Wire, &u8)) {
-        canvas.ren.set_draw_color(colors::WIRE[*state as usize]);
-
-        for pixel in &wire.pixels {
-            canvas
-                .ren
-                .fill_rect(Rect::new(
-                    (pixel.0 as u32 * canvas.scale) as i32,
-                    (pixel.1 as u32 * canvas.scale) as i32,
-                    canvas.scale,
-                    canvas.scale,
-                ))
-                .unwrap();
+        if self.state == State::Running {
+            self.circuit.step_and_render(&mut self.img);
         }
     }
 
     fn draw(&mut self) {
         let canvas = &mut self.canvas;
 
-        canvas.ren.set_draw_color(colors::VOID);
-        canvas.ren.clear();
+        let pitch = (self.img.width() * 4) as usize;
+        let _ = canvas.tex.update(None, &self.img, pitch);
+        let _ = canvas.ren.copy(&canvas.tex, None, None);
 
-        // Present the original image.
-        canvas.ren.copy(&canvas.img_tex, None, None).unwrap();
-
-        // Overlap the image with charge-colored wires (if not in editing mode).
-        if self.state == State::Running {
-            self.circuit
-                .wires
-                .iter()
-                .zip(self.circuit.state.iter())
-                .for_each(|wire| Self::draw_wire(canvas, wire));
-        }
-
-        canvas.ren.set_draw_color(colors::CURSOR);
-
-        canvas
-            .ren
-            .fill_rect(Rect::new(
-                self.event_pump.mouse_state().x() / canvas.scale as i32 * canvas.scale as i32,
-                self.event_pump.mouse_state().y() / canvas.scale as i32 * canvas.scale as i32,
-                canvas.scale as u32,
-                canvas.scale as u32,
-            ))
-            .unwrap();
+        canvas.ren.set_draw_color(CURSOR);
+        let cursor = Rect::new(
+            self.mouse.0 / canvas.scale as i32 * canvas.scale as i32,
+            self.mouse.1 / canvas.scale as i32 * canvas.scale as i32,
+            canvas.scale,
+            canvas.scale,
+        );
+        let _ = canvas.ren.fill_rect(cursor);
 
         canvas.ren.present();
     }
@@ -251,7 +215,7 @@ impl App {
         while self.state != State::Quit {
             self.eventpoll();
 
-            if last_time.elapsed().as_millis() > self.delay {
+            if last_time.elapsed().as_millis() > self.delay as u128 {
                 last_time = time::Instant::now();
                 self.update();
             }

@@ -4,15 +4,18 @@ mod app;
 pub mod wired_logic;
 
 fn main() {
-    let filename = if std::env::args().len() != 2 {
-        eprintln!("Usage: {} filename", std::env::args().nth(0).unwrap());
-        std::process::exit(1)
+    let args: Vec<_> = std::env::args().collect();
+    if args.len() == 1 {
+        let img = image::RgbaImage::from_pixel(100, 100, wired_logic::VOID);
+        app::init(img).run();
+    } else if args.len() == 2 {
+        let img = image::open(&args[1]).unwrap();
+        app::init(img.to_rgba()).run();
+    } else if args.len() == 3 {
+        // Implement GIF rendering;
+        unimplemented!();
     } else {
-        std::env::args().last().unwrap()
-    };
-
-    let img = image::open(filename).unwrap();
-    let g = app::init("wired-rs", img.to_rgba());
-
-    g.run();
+        eprintln!("USAGE: {} [input [output.gif]]", args[0]);
+        std::process::exit(1);
+    }
 }

@@ -1,7 +1,7 @@
 use crate::wired_logic::*;
 
 /// Returns Von Neumann neighbourhood coordinates as an array [up, down, left, right].
-fn neighbourhood_neumann(coord: (usize, usize)) -> [(usize, usize); 4] {
+fn neighbourhood_neumann(coord: (u32, u32)) -> [(u32, u32); 4] {
     [
         (coord.0.wrapping_sub(1), coord.1),
         (coord.0.wrapping_add(1), coord.1),
@@ -18,7 +18,7 @@ enum NeumannIndices {
 }
 
 /// Returns diagonal neighbourhood coordinates as an array [up-left, up-right, down-left, down-right].
-fn neighbourhood_diagonal(coord: (usize, usize)) -> [(usize, usize); 4] {
+fn neighbourhood_diagonal(coord: (u32, u32)) -> [(u32, u32); 4] {
     [
         (coord.0.wrapping_sub(1), coord.1.wrapping_sub(1)),
         (coord.0.wrapping_sub(1), coord.1.wrapping_add(1)),
@@ -36,19 +36,19 @@ enum DiagonalIndices {
 
 #[derive(Copy, Clone, PartialEq)]
 enum Pixel {
-    Wire(Option<usize>),
+    Wire(u8, Option<usize>),
     Transistor,
     Void,
 }
 
-struct Parser {
-    circuit: Circuit,
+struct Parser<'a> {
+    circuit: &'a mut Circuit,
     pixels: Vec<Pixel>,
-    transistors: Vec<(usize, usize)>,
+    transistors: Vec<(u32, u32)>,
 }
 
-impl Parser {
-    fn get(&self, coord: (usize, usize)) -> Pixel {
+impl Parser<'_> {
+    fn get(&self, coord: (u32, u32)) -> Pixel {
         // The wrapping hack should work up to usize max number of pixels
         // Since such screens are not common and are unlikely to be used by the end user:
         *self
@@ -57,29 +57,18 @@ impl Parser {
                 coord
                     .1
                     .wrapping_mul(self.circuit.bounds.0)
-                    .wrapping_add(coord.0),
+                    .wrapping_add(coord.0) as usize,
             )
             .unwrap_or(&Pixel::Void)
     }
 
-    fn set(&mut self, coord: (usize, usize), pixel: Pixel) {
-        self.pixels[coord.1 * self.circuit.bounds.0 + coord.0] = pixel
+    fn set(&mut self, coord: (u32, u32), pixel: Pixel) {
+        self.pixels[(coord.1 * self.circuit.bounds.0 + coord.0) as usize] = pixel
     }
 
-    fn neumann_neighbours(&self, coord: (usize, usize)) -> usize {
-        let mut acc = 0;
-
-        neighbourhood_neumann(coord).iter().for_each(|i| {
-            if let Pixel::Wire(_) = self.get(*i) {
-                acc += 1;
-            }
-        });
-
-        acc
-    }
-
-    fn add_wire(&mut self, coord: (usize, usize)) -> usize {
+    fn add_wire(&mut self, coord: (u32, u32)) -> u8 {
         let wire_index = self.circuit.wires.len();
+        let mut wire_charge = 0;
         self.circuit.wires.push(Wire {
             is_source: false,
             transistors: Vec::new(),
@@ -89,14 +78,18 @@ impl Parser {
         let mut stack = vec![(coord, coord)];
         while let Some((coord, parent)) = stack.pop() {
             match self.get(coord) {
-                Pixel::Wire(None) => {
+                Pixel::Wire(charge, None) => {
                     if self.is_source(coord) {
                         self.circuit.wires[wire_index].is_source = true;
+                        wire_charge = MAX_CHARGE;
+                    }
+
+                    if charge > wire_charge {
+                        wire_charge = charge;
                     }
 
                     self.circuit.wires[wire_index].pixels.push(coord);
-
-                    self.set(coord, Pixel::Wire(Some(wire_index)));
+                    self.set(coord, Pixel::Wire(charge, Some(wire_index)));
 
                     neighbourhood_neumann(coord)
                         .iter()
@@ -107,8 +100,8 @@ impl Parser {
                         /* The current coordinate + difference from the previous cell
                          * should take us to the opposite side of the crossing. */
                         let jump = (
-                            (coord.0 as isize + (coord.0 as isize - parent.0 as isize)) as usize,
-                            (coord.1 as isize + (coord.1 as isize - parent.1 as isize)) as usize,
+                            (coord.0 as i32 + (coord.0 as i32 - parent.0 as i32)) as u32,
+                            (coord.1 as i32 + (coord.1 as i32 - parent.1 as i32)) as u32,
                         );
                         stack.push((jump, coord));
                     } else if self.is_transistor(coord) {
@@ -119,20 +112,20 @@ impl Parser {
                     }
                 }
 
-                Pixel::Wire(Some(_)) | Pixel::Transistor => {}
+                _ => {}
             }
         }
 
-        wire_index
+        wire_charge
     }
 
-    fn add_transistor(&mut self, coord: (usize, usize)) {
+    fn add_transistor(&mut self, coord: (u32, u32)) {
         use NeumannIndices::*;
         let (up, down, left, right) = (Up as usize, Down as usize, Left as usize, Right as usize);
 
         let mut neighbours = [Option::<usize>::None; 4];
         for (i, coord) in neighbourhood_neumann(coord).iter().enumerate() {
-            if let Pixel::Wire(Some(wire)) = self.get(*coord) {
+            if let Pixel::Wire(_, Some(wire)) = self.get(*coord) {
                 neighbours[i] = Some(wire);
             }
         }
@@ -173,7 +166,7 @@ impl Parser {
         self.circuit.transistors.push(transistor);
     }
 
-    fn is_source(&self, coord: (usize, usize)) -> bool {
+    fn is_source(&self, coord: (u32, u32)) -> bool {
         /* If cells to the right, down and down-right are occupied by wires,
          * we've got ourselves a square which is a power source. */
         for i in [
@@ -185,35 +178,37 @@ impl Parser {
         {
             match self.get(*i) {
                 Pixel::Void | Pixel::Transistor => return false,
-                Pixel::Wire(_) => continue,
+                Pixel::Wire(..) => continue,
             }
         }
 
         true
     }
 
-    fn is_crossing(&self, coord: (usize, usize)) -> bool {
+    fn is_crossing(&self, coord: (u32, u32)) -> bool {
         for i in neighbourhood_diagonal(coord).iter() {
             if self.get(*i) != Pixel::Void {
                 return false;
             }
         }
 
-        if self.neumann_neighbours(coord) == 4 {
-            return true;
+        for i in neighbourhood_neumann(coord).iter() {
+            if self.get(*i) == Pixel::Void {
+                return false;
+            }
         }
 
-        false
+        true
     }
 
-    fn is_transistor(&self, coord: (usize, usize)) -> bool {
+    fn is_transistor(&self, coord: (u32, u32)) -> bool {
         use DiagonalIndices::*;
         use NeumannIndices::*;
 
         let neighbours_neumann: Vec<bool> = neighbourhood_neumann(coord)
             .iter()
             .map(|i| {
-                if let Pixel::Wire(_) = self.get(*i) {
+                if let Pixel::Wire(..) = self.get(*i) {
                     true
                 } else {
                     false
@@ -223,7 +218,7 @@ impl Parser {
         let neighbours_diagonal: Vec<bool> = neighbourhood_diagonal(coord)
             .iter()
             .map(|i| {
-                if let Pixel::Wire(_) = self.get(*i) {
+                if let Pixel::Wire(..) = self.get(*i) {
                     true
                 } else {
                     false
@@ -263,32 +258,36 @@ impl Parser {
     }
 }
 
-pub fn parse(circuit: &[bool], bounds: (usize, usize)) -> Circuit {
+pub fn parse(img: &image::RgbaImage, circuit: &mut Circuit) {
+    circuit.wires.clear();
+    circuit.transistors.clear();
+    circuit.state.clear();
+
     let mut parser = Parser {
-        circuit: Circuit {
-            bounds,
-            wires: Vec::new(),
-            transistors: Vec::new(),
-            state: Vec::new(),
-        },
-        pixels: circuit
-            .iter()
-            .map(|i| if *i { Pixel::Wire(None) } else { Pixel::Void })
+        circuit,
+        pixels: img
+            .pixels()
+            .map(|color| {
+                let mut pixel = Pixel::Void;
+                (0..=MAX_CHARGE).for_each(|i| {
+                    if *color == CHARGE[i as usize] {
+                        pixel = Pixel::Wire(i, None);
+                    }
+                });
+                pixel
+            })
             .collect(),
         transistors: Vec::new(),
     };
 
+    let bounds = parser.circuit.bounds;
+
     /* First pass: wires. */
     for y in 0..bounds.1 {
         for x in 0..bounds.0 {
-            if let Pixel::Wire(None) = parser.pixels[(y * bounds.0 + x) as usize] {
-                let wire = parser.add_wire((x, y));
-
-                if parser.circuit.wires[wire].is_source {
-                    parser.circuit.state.push(MAX_CHARGE);
-                } else {
-                    parser.circuit.state.push(0);
-                }
+            if let Pixel::Wire(_, None) = parser.pixels[(y * bounds.0 + x) as usize] {
+                let charge = parser.add_wire((x, y));
+                parser.circuit.state.push(charge);
             }
         }
     }
@@ -297,6 +296,4 @@ pub fn parse(circuit: &[bool], bounds: (usize, usize)) -> Circuit {
     while let Some(i) = parser.transistors.pop() {
         parser.add_transistor(i);
     }
-
-    parser.circuit
 }

@@ -1,6 +1,6 @@
 [package]
 name = "wired-rs"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["iostapyshyn"]
 edition = "2018"
 
@@ -12,4 +12,5 @@ imageproc = "0.19.2"
 
 [dependencies.sdl2]
 version = "0.33.0"
+default-features = false
 features = ["unsafe_textures"]

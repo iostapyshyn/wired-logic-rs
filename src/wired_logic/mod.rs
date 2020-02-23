@@ -3,7 +3,17 @@ mod parser;
 
 use image::RgbaImage;
 
-const MAX_CHARGE: u8 = 6;
+pub const MAX_CHARGE: u8 = 6;
+pub const VOID: image::Rgba<u8> = image::Rgba([0x00, 0x00, 0x00, 0xff]);
+pub const CHARGE: [image::Rgba<u8>; (MAX_CHARGE + 1) as usize] = [
+    image::Rgba([0x88, 0x00, 0x00, 0xff]),
+    image::Rgba([0xff, 0x00, 0x00, 0xff]),
+    image::Rgba([0xff, 0x22, 0x00, 0xff]),
+    image::Rgba([0xff, 0x44, 0x00, 0xff]),
+    image::Rgba([0xff, 0x66, 0x00, 0xff]),
+    image::Rgba([0xff, 0x88, 0x00, 0xff]),
+    image::Rgba([0xff, 0xaa, 0x00, 0xff]),
+];
 
 // The struct contains indices of transistor pins in wires
 // array of the Circuit.
@@ -14,7 +24,7 @@ struct Transistor {
 
 // Generic wire struct.
 pub struct Wire {
-    pub pixels: Vec<(usize, usize)>,
+    pub pixels: Vec<(u32, u32)>,
     is_source: bool,
     /* Indices of connected transistors.
      * Does not contain the ones that are connected by the base (control) pin. */
@@ -24,22 +34,28 @@ pub struct Wire {
 /** All transistors and wires live in a big pool called Circuit
  ** and are owned by the respective vectors. */
 pub struct Circuit {
-    pub bounds: (usize, usize),   // original image bounds
+    pub bounds: (u32, u32),       // original image bounds
     pub wires: Vec<Wire>,         // wires pool
     pub state: Vec<u8>,           // current charges of the wires
     transistors: Vec<Transistor>, // transistors pool
 }
 
 impl Circuit {
-    pub fn from_image(img: &RgbaImage) -> Self {
-        let bounds = img.dimensions();
+    pub fn new(img: &RgbaImage) -> Self {
+        let mut circuit = Circuit {
+            bounds: img.dimensions(),
+            wires: Vec::new(),
+            transistors: Vec::new(),
+            state: Vec::new(),
+        };
 
-        let wire: Vec<bool> = img
-            .pixels()
-            .map(|i| *i == image::Rgba([0x88, 0x00, 0x00, 0xff]))
-            .collect();
+        parser::parse(&img, &mut circuit);
 
-        parser::parse(&wire, (bounds.0 as usize, bounds.1 as usize))
+        circuit
+    }
+
+    pub fn update(&mut self, img: &RgbaImage) {
+        parser::parse(img, self);
     }
 
     fn transistors_of(&self, wire: usize) -> Vec<&Transistor> {
@@ -89,5 +105,18 @@ impl Circuit {
             });
 
         self.state = state;
+    }
+
+    pub fn render(&self, img: &mut image::RgbaImage) {
+        self.wires.iter().enumerate().for_each(|(i, wire)| {
+            wire.pixels.iter().for_each(|coord| {
+                img.put_pixel(coord.0, coord.1, CHARGE[self.state[i] as usize]);
+            })
+        });
+    }
+
+    pub fn step_and_render(&mut self, img: &mut image::RgbaImage) {
+        self.step();
+        self.render(img);
     }
 }
