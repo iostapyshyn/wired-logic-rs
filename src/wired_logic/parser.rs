@@ -68,7 +68,7 @@ impl Parser<'_> {
 
     fn add_wire(&mut self, coord: (u32, u32)) -> u8 {
         let wire_index = self.circuit.wires.len();
-        let mut wire_charge = 0;
+        let mut charge = 0;
         self.circuit.wires.push(Wire {
             is_source: false,
             transistors: Vec::new(),
@@ -78,18 +78,15 @@ impl Parser<'_> {
         let mut stack = vec![(coord, coord)];
         while let Some((coord, parent)) = stack.pop() {
             match self.get(coord) {
-                Pixel::Wire(charge, None) => {
+                Pixel::Wire(this_charge, None) => {
                     if self.is_source(coord) {
                         self.circuit.wires[wire_index].is_source = true;
-                        wire_charge = MAX_CHARGE;
                     }
 
-                    if charge > wire_charge {
-                        wire_charge = charge;
-                    }
+                    charge = std::cmp::max(charge, this_charge);
 
                     self.circuit.wires[wire_index].pixels.push(coord);
-                    self.set(coord, Pixel::Wire(charge, Some(wire_index)));
+                    self.set(coord, Pixel::Wire(this_charge, Some(wire_index)));
 
                     neighbourhood_neumann(coord)
                         .iter()
@@ -116,7 +113,7 @@ impl Parser<'_> {
             }
         }
 
-        wire_charge
+        charge
     }
 
     fn add_transistor(&mut self, coord: (u32, u32)) {
@@ -187,13 +184,17 @@ impl Parser<'_> {
 
     fn is_crossing(&self, coord: (u32, u32)) -> bool {
         for i in neighbourhood_diagonal(coord).iter() {
-            if self.get(*i) != Pixel::Void {
+            if let Pixel::Wire(..) = self.get(*i) {
                 return false;
+            } else {
+                continue;
             }
         }
 
         for i in neighbourhood_neumann(coord).iter() {
-            if self.get(*i) == Pixel::Void {
+            if let Pixel::Wire(..) = self.get(*i) {
+                continue;
+            } else {
                 return false;
             }
         }
@@ -268,13 +269,12 @@ pub fn parse(img: &image::RgbaImage, circuit: &mut Circuit) {
         pixels: img
             .pixels()
             .map(|color| {
-                let mut pixel = Pixel::Void;
-                (0..=MAX_CHARGE).for_each(|i| {
+                for i in 0..=MAX_CHARGE {
                     if *color == CHARGE[i as usize] {
-                        pixel = Pixel::Wire(i, None);
+                        return Pixel::Wire(i, None);
                     }
-                });
-                pixel
+                }
+                Pixel::Void
             })
             .collect(),
         transistors: Vec::new(),

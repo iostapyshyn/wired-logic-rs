@@ -84,39 +84,43 @@ impl Circuit {
         source_charge
     }
 
-    pub fn step(&mut self) {
-        let mut state = self.state.clone();
+    pub fn step(&mut self) -> &Self {
+        let mut new_state = Vec::with_capacity(self.state.len());
 
-        (0..self.wires.len())
-            .into_iter()
-            .zip(&mut state)
-            .for_each(|(i, charge)| {
-                if self.wires[i].is_source {
-                    *charge = MAX_CHARGE;
-                } else {
-                    let source = self.trace_source(i);
+        for i in 0..self.wires.len() {
+            let mut charge = self.state[i];
+            if self.wires[i].is_source {
+                charge = MAX_CHARGE;
+            } else {
+                let source = self.trace_source(i);
 
-                    if source > *charge + 1 {
-                        *charge += 1;
-                    } else if source <= *charge && *charge > 0 {
-                        *charge -= 1;
-                    }
+                if source > charge + 1 {
+                    charge += 1;
+                } else if source <= charge && charge > 0 {
+                    charge -= 1;
                 }
-            });
+            }
+            new_state.push(charge);
+        }
 
-        self.state = state;
+        self.state = new_state;
+
+        self
     }
 
-    pub fn render(&self, img: &mut image::RgbaImage) {
-        self.wires.iter().enumerate().for_each(|(i, wire)| {
+    pub fn export(&self, dest: &mut image::RgbaImage) {
+        self.wires.iter().for_each(|wire| {
             wire.pixels.iter().for_each(|coord| {
-                img.put_pixel(coord.0, coord.1, CHARGE[self.state[i] as usize]);
+                dest.put_pixel(coord.0, coord.1, CHARGE[0]);
             })
         });
     }
 
-    pub fn step_and_render(&mut self, img: &mut image::RgbaImage) {
-        self.step();
-        self.render(img);
+    pub fn render(&self, dest: &mut image::RgbaImage) {
+        self.wires.iter().enumerate().for_each(|(i, wire)| {
+            wire.pixels.iter().for_each(|coord| {
+                dest.put_pixel(coord.0, coord.1, CHARGE[self.state[i] as usize]);
+            })
+        });
     }
 }
