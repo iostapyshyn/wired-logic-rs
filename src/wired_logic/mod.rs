@@ -85,22 +85,20 @@ impl Circuit {
     }
 
     pub fn step(&mut self) -> &Self {
-        let mut new_state = Vec::with_capacity(self.state.len());
+        let mut new_state = self.state.clone();
 
-        for i in 0..self.wires.len() {
-            let mut charge = self.state[i];
-            if self.wires[i].is_source {
-                charge = MAX_CHARGE;
-            } else {
+        for (i, charge) in (0..self.wires.len()).zip(&mut new_state) {
+            if self.wires[i].is_source && *charge < MAX_CHARGE {
+                *charge += 1;
+            } else if !self.wires[i].is_source {
                 let source = self.trace_source(i);
 
-                if source > charge + 1 {
-                    charge += 1;
-                } else if source <= charge && charge > 0 {
-                    charge -= 1;
+                if source > *charge + 1 {
+                    *charge += 1;
+                } else if source <= *charge && *charge > 0 {
+                    *charge -= 1;
                 }
             }
-            new_state.push(charge);
         }
 
         self.state = new_state;

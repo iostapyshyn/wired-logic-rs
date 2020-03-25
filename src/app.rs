@@ -145,10 +145,10 @@ impl App {
                         self.circuit.render(&mut self.image);
                     }
 
-                    Some(Right) => self.cursor.0 += 1,
-                    Some(Left) => self.cursor.0 -= 1,
-                    Some(Down) => self.cursor.1 += 1,
-                    Some(Up) => self.cursor.1 -= 1,
+                    Some(Right) if self.cursor.0 < self.circuit.bounds.0 - 1 => self.cursor.0 += 1,
+                    Some(Left) if self.cursor.0 > 0 => self.cursor.0 -= 1,
+                    Some(Down) if self.cursor.1 < self.circuit.bounds.1 - 1 => self.cursor.1 += 1,
+                    Some(Up) if self.cursor.1 > 0 => self.cursor.1 -= 1,
 
                     _ => {}
                 },
