@@ -1,0 +1,149 @@
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+@import url('https://fonts.googleapis.com/css?family=Quicksand');
+
+html, body {
+  margin: 0px;
+  padding: 0px;
+  height: 100%;
+  background-color: black;
+  font-family: 'Quicksand', sans-serif;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+hr {
+  border: 0px;
+  height: 1px;
+  background: #d1d1d1;
+}
+
+table {
+  border-spacing: 2px;
+}
+
+.centered {
+  position: relative;
+  width: max-content;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.horizontally-centered {
+  position: relative;
+  width: max-content;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  text-align: center;
+}
+
+.button {
+  font-size: 100%;
+  padding: .5em 1em;
+  border: none transparent;
+  text-decoration: none;
+  border-radius: 2px;
+  width: min-content;
+  height: min-content;
+
+  /*border: 1px solid #d1d1d1;*/
+  background-color: #ffffff;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: 2px;
+  background: black;
+  outline: none;
+  -webkit-transition: opacity .15s ease-in-out;
+  transition: opacity .15s ease-in-out;
+}
+
+.panel {
+  background-color: #ffffff;
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.subnav {
+  box-sizing: border-box;
+  background-color: #fff;
+  padding: 5px;
+  height: 34px;
+  width: 100%;
+  position: relative;
+  border-bottom: 1px solid #d1d1d1;
+  color: #000;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  position: absolute;
+  left: -5px; /* subnav padding: 5px */
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-content a:hover {
+  background-color: #ffffff;
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
+
+#canvas {
+  max-width:100%;
+}
+
+#left, #right {
+  height: 100%;
+  display: inline;
+  float: left;
+  overflow-x: hidden;
+}
+
+#left {
+  width: 20%;
+  background: #f2f2f2;
+}
+
+#right {
+  width: 80%;
+  background: black;
+}
+
+/* The split shall be horizontal on mobile. */
+@media only screen and (max-width : 1099px) {
+  #left, #right {
+    width: 100%;
+  }
+}
+
+#github-icon {
+  float: right;
+  max-width: 100%;
+  max-height: 100%;
+}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="index.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <title>Wired-rs</title>
+  </head>
+  <body>
+    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
+    <script src="./bootstrap.js" defer></script>
+
+    <div id="left">
+      <div class="subnav">
+        <div class="dropdown">
+          <a href="#" class="material-icons" id="menuIcon">menu</a>
+          <div id="dropdown" class="dropdown-content">
+            <a href="#">Save</a>
+            <a href="#">Load</a>
+            <a href="#">Render</a>
+          </div>
+        </div>
+        <img src="github-mark.svg" id="github-icon">
+      </div>
+      <div class="horizontally-centered">
+        <br>
+        <div class="panel">
+          <i class="material-icons">settings</i>
+          <br>
+          Simulation
+          <hr>
+          <table border="0">
+            <tr>
+              <td align="right"><b>Speed</b></td>
+              <td><input type="range" min="0" max="250" value="50" class="slider" id="speedRange" style="direction: rtl;"></td>
+            </tr>
+            <tr>
+              <td align="right"><b>Scale</b></td>
+              <td><input type="range" min="1" max="36" value="2" class="slider" id="scaleRange"></td>
+            </tr>
+          </table>
+          <hr>
+          <input type="submit" value="pause" class="button material-icons" id="pauseButton"></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="right">
+      <canvas id="canvas" class="centered"></canvas>
+    </div>
+
+  </body>
+</html>
