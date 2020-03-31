@@ -12,41 +12,37 @@
 
     <div id="left">
       <div class="subnav">
-        <div class="dropdown">
-          <a href="#" class="material-icons" id="menuIcon">menu</a>
-          <div id="dropdown" class="dropdown-content">
-            <a href="#">Save</a>
-            <a href="#">Load</a>
-            <a href="#">Render</a>
-          </div>
-        </div>
-        <img src="github-mark.svg" id="github-icon">
+        <center>Dashboard</center>
       </div>
-      <div class="horizontally-centered">
+      <div class="panel">
+        <span class="material-icons">settings</span>
         <br>
-        <div class="panel">
-          <i class="material-icons">settings</i>
-          <br>
-          Simulation
-          <hr>
-          <table border="0">
-            <tr>
-              <td align="right"><b>Speed</b></td>
-              <td><input type="range" min="0" max="250" value="50" class="slider" id="speedRange" style="direction: rtl;"></td>
-            </tr>
-            <tr>
-              <td align="right"><b>Scale</b></td>
-              <td><input type="range" min="1" max="36" value="2" class="slider" id="scaleRange"></td>
-            </tr>
-          </table>
-          <hr>
-          <input type="submit" value="pause" class="button material-icons" id="pauseButton"></button>
-        </div>
+        Simulation
+
+        <hr>
+
+        <b>Speed</b>
+        <br>
+        <input type="range" min="0" max="250" class="slider" id="delay-range" style="direction: rtl;">
+        <br>
+        <span id="delay-value">?</span>
+        <br><br>
+
+        <b>Zoom</b>
+        <br>
+        <input type="submit" value="remove" class="button material-icons" id="zoom-minus"></button>
+        <input type="submit" value="add" class="button material-icons" id="zoom-plus"></button>
+
+        <hr>
+
+        <input type="submit" value="pause" class="button material-icons" id="pause-button"></button>
       </div>
     </div>
 
     <div id="right">
-      <canvas id="canvas" class="centered"></canvas>
+      <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+      </div>
     </div>
 
   </body>

@@ -46,17 +46,23 @@ table {
   padding: .5em 1em;
   border: none transparent;
   text-decoration: none;
-  border-radius: 2px;
   width: min-content;
   height: min-content;
 
+  color: #202020;
+
   /*border: 1px solid #d1d1d1;*/
+  /*border-radius: 2px;*/
+
   background-color: #ffffff;
+}
+
+.button:hover {
+  color: #000000;
 }
 
 .slider {
   -webkit-appearance: none;
-  width: 100%;
   height: 5px;
   border-radius: 2px;
   background: black;
@@ -66,10 +72,12 @@ table {
 }
 
 .panel {
+  max-width: 100%;
   background-color: #ffffff;
   border: 1px solid #d1d1d1;
   border-radius: 4px;
   padding: 10px;
+  margin: 25px;
 }
 
 .subnav {
@@ -83,41 +91,6 @@ table {
   color: #000;
 }
 
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown-content {
-  position: absolute;
-  left: -5px; /* subnav padding: 5px */
-  display: none;
-  position: absolute;
-  background-color: #f1f1f1;
-  min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-  z-index: 1;
-}
-
-.dropdown-content a {
-  color: black;
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
-}
-
-.dropdown-content a:hover {
-  background-color: #ffffff;
-}
-
-.dropdown:hover .dropdown-content {
-  display: block;
-}
-
-#canvas {
-  max-width:100%;
-}
-
 #left, #right {
   height: 100%;
   display: inline;
@@ -128,11 +101,18 @@ table {
 #left {
   width: 20%;
   background: #f2f2f2;
+  text-align: center;
 }
 
 #right {
   width: 80%;
   background: black;
+
+  /* Centering of the content. */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
 }
 
 /* The split shall be horizontal on mobile. */
@@ -142,7 +122,19 @@ table {
   }
 }
 
+/* Needed for proper scrolling when canvas doesn't fit on the screen. */
+#canvas-container {
+  width: 100%;
+  overflow-y: auto;
+}
+
+#canvas {
+  cursor: none;
+}
+
 #github-icon {
+  position: relative;
+  display: inline-block;
   float: right;
   max-width: 100%;
   max-height: 100%;

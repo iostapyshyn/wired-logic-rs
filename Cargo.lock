@@ -795,16 +795,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "daf76fe7d25ac79748a37538b7daeed1c7a6867c92d3245c12c6222e4a20d639"
 
 [[package]]
-name = "web-sys"
-version = "0.3.37"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d6f51648d8c56c366144378a33290049eafdd784071077f6fe37dae64c1c4cb"
-dependencies = [
- "js-sys",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "winapi"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -835,5 +825,4 @@ dependencies = [
  "imageproc",
  "js-sys",
  "wasm-bindgen",
- "web-sys",
 ]

@@ -4,6 +4,7 @@ mod parser;
 use image::RgbaImage;
 
 pub const MAX_CHARGE: u8 = 6;
+pub const VOID: image::Rgba<u8> = image::Rgba([0x00, 0x00, 0x00, 0xff]);
 pub const CHARGE: [image::Rgba<u8>; (MAX_CHARGE + 1) as usize] = [
     image::Rgba([0x88, 0x00, 0x00, 0xff]),
     image::Rgba([0xff, 0x00, 0x00, 0xff]),
