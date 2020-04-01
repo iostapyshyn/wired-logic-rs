@@ -97,6 +97,7 @@ document.addEventListener("keyup", (e) => {
 
 // Canvas related event handlers:
 
+
 canvas.addEventListener("mouseover", () => { hoveringCanvas = true; }, false);
 canvas.addEventListener("mouseout", () => { hoveringCanvas = false; }, false);
 
@@ -107,24 +108,9 @@ document.addEventListener("mousemove", (evt) => {
 
   var rect = canvas.getBoundingClientRect();
   mousePos = {
-    x: Math.floor((evt.clientX - rect.left) / scale),
-    y: Math.floor((evt.clientY - rect.top) / scale),
+    x: clamp(Math.floor((evt.clientX - rect.left) / scale), 0, width-1),
+    y: clamp(Math.floor((evt.clientY - rect.top) / scale), 0, height-1),
   };
-
-  mousePos = {
-    x: clamp(mousePos.x, 0, width-1),
-    y: clamp(mousePos.y, 0, height-1),
-  };
-
-  if (rubberOn) {
-    circuit.fill_rect(
-      mousePos.x-Math.floor(rubberSize/2),
-      mousePos.y-Math.floor(rubberSize/2),
-      rubberSize,
-      rubberSize,
-      wasm.Cell.Void,
-    );
-  }
 }, false);
 
 document.addEventListener("mousedown", () => {
@@ -198,11 +184,19 @@ function loop() {
         (rubberSize) * scale
       );
       ctx.stroke();
+
+      // Apply rubber
+      circuit.fill_rect(
+        mousePos.x-Math.floor(rubberSize/2),
+        mousePos.y-Math.floor(rubberSize/2),
+        rubberSize,
+        rubberSize,
+        wasm.Cell.Void,
+      );
     } else {
       ctx.fillRect(mousePos.x * scale, mousePos.y * scale, scale, scale);
     }
   }
-
 
   requestAnimationFrame(loop);
 }
@@ -231,7 +225,25 @@ function initCanvas() {
   }
 }
 
-function loadCircuit(filePath) {
+function loadBytes(bytes) {
+  circuit = wasm.Circuit.new(bytes);
+  width = circuit.width();
+  height = circuit.height();
+
+  buf.canvas.width = width;
+  buf.canvas.height = height;
+
+  // As per The Living Standart, the ImageData does not perform a copy
+  // when created with Uint8ClampedArray source.
+  // pixel_view() returns an Uint8ClampedArray pointing at the region
+  // of the wasm memory containing the rgb data; as a result, we save a few calls.
+  imageDataView = new ImageData(circuit.pixels_view(), width);
+
+  initCanvas();
+  loop();
+}
+
+function loadURL(filePath) {
   var request = new XMLHttpRequest();
   request.open('GET', filePath, true);
   request.responseType = "arraybuffer";
@@ -239,25 +251,11 @@ function loadCircuit(filePath) {
   request.onreadystatechange = function() {
     if (request.response) {
       const bytes = new Uint8Array(request.response);
-      circuit = wasm.Circuit.new(bytes);
-      width = circuit.width();
-      height = circuit.height();
-
-      buf.canvas.width = width;
-      buf.canvas.height = height;
-
-      // As per The Living Standart, the ImageData does not perform a copy
-      // when created with Uint8ClampedArray source.
-      // pixel_view() returns an Uint8ClampedArray pointing at the region
-      // of the wasm memory containing the rgb data; as a result, we save a few calls.
-      imageDataView = new ImageData(circuit.pixels_view(), width);
-
-      initCanvas();
-      loop();
+      loadBytes(bytes);
     }
   };
 
   request.send(null);
 }
 
-loadCircuit("examples/input.gif");
+loadURL("examples/input.gif");
