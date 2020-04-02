@@ -9,11 +9,6 @@ html, body {
   font-family: 'Quicksand', sans-serif;
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
 hr {
   border: 0px;
   height: 1px;
@@ -91,6 +86,24 @@ table {
   color: #000;
 }
 
+.menu {
+  background-color: #ffffff;
+  min-width: 160px;
+  z-index: 1;
+}
+
+/* Links inside the dropdown */
+.menu a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.menu a:hover {
+  background-color: #f2f2f2;
+}
+
 #left, #right {
   height: 100%;
   display: inline;
@@ -99,7 +112,10 @@ table {
 }
 
 #left {
+  position:relative;
+
   width: 20%;
+  min-height: 100%;
   background: #f2f2f2;
   text-align: center;
 }
@@ -119,6 +135,10 @@ table {
 @media only screen and (max-width : 1099px) {
   #left, #right {
     width: 100%;
+  }
+
+  #left {
+    height: max-content;
   }
 }
 

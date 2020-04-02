@@ -41,6 +41,16 @@ impl Circuit {
         self.circuit.render(&mut self.source);
     }
 
+    pub fn at(&self, x: u32, y: u32) -> Cell {
+        for i in wired_logic::CHARGE.iter() {
+            if self.source.get_pixel(x, y) == i {
+                return Cell::Wire;
+            }
+        }
+
+        Cell::Void
+    }
+
     pub fn pixels_view(&mut self) -> js_sys::Uint8ClampedArray {
         unsafe { js_sys::Uint8ClampedArray::view(&self.source) }
     }
@@ -68,25 +78,28 @@ impl Circuit {
     }
 
     pub fn toggle_pixel(&mut self, x: u32, y: u32) {
-        let mut pixel = Cell::Wire;
-        for i in wired_logic::CHARGE.iter() {
-            if self.source.get_pixel(x, y) == i {
-                pixel = Cell::Void;
-            }
-        }
+        let cell = match self.at(x, y) {
+            Cell::Wire => Cell::Void,
+            Cell::Void => Cell::Wire,
+        };
 
-        self.draw_pixel(x, y, pixel);
+        self.draw_pixel(x, y, cell);
     }
 
-    pub fn toggle_line(&mut self, start_x: f32, start_y: f32, end_x: f32, end_y: f32) {
-        let mut cell = Cell::Wire;
-        for i in wired_logic::CHARGE.iter() {
-            if self.source.get_pixel(start_x as u32, start_y as u32) == i {
-                cell = Cell::Void;
-            }
-        }
+    /// Toggles the line based on the starting pixel;
+    pub fn toggle_line(&mut self, start_x: u32, start_y: u32, end_x: u32, end_y: u32) {
+        let cell = match self.at(start_x, start_y) {
+            Cell::Wire => Cell::Void,
+            Cell::Void => Cell::Wire,
+        };
 
-        self.draw_line(start_x, start_y, end_x, end_y, cell);
+        self.draw_line(
+            start_x as f32,
+            start_y as f32,
+            end_x as f32,
+            end_y as f32,
+            cell,
+        );
     }
 
     pub fn width(&self) -> u32 {
