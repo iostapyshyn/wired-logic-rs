@@ -1,0 +1,23 @@
+{
+  "name": "www",
+  "version": "1.0.0",
+  "description": "",
+  "main": "webpack.config.js",
+  "scripts": {
+    "serve": "webpack-dev-server",
+    "bundle": "webpack",
+    "clean": "rm -rf node_modules/"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wired-rs": "file:../pkg"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "^5.1.1",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  }
+}

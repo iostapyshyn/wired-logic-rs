@@ -106,14 +106,6 @@ impl Circuit {
         self
     }
 
-    pub fn export(&self, dest: &mut image::RgbaImage) {
-        self.wires.iter().for_each(|wire| {
-            wire.pixels.iter().for_each(|coord| {
-                dest.put_pixel(coord.0, coord.1, CHARGE[0]);
-            })
-        });
-    }
-
     pub fn render(&self, dest: &mut image::RgbaImage) {
         self.wires.iter().enumerate().for_each(|(i, wire)| {
             wire.pixels.iter().for_each(|coord| {
