@@ -1,39 +1,73 @@
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-@import url('https://fonts.googleapis.com/css?family=Quicksand');
-
 html, body {
-  margin: 0px;
-  padding: 0px;
-  height: 100%;
-  background-color: black;
   font-family: 'Quicksand', sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Split the screen vertically on desktop, dashboard on the left side
+ * canvas on the right side */
+.dashboard, .view {
+  float: left;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+.dashboard {
+  width: 20%;
+  min-height: 100%;
+  background: #f2f2f2;
+  text-align: center;
+
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.dashboard-header {
+  box-sizing: border-box;
+  border-bottom: 1px solid #d1d1d1;
+  background: #fff;
+  color: black;
+  padding: 5px;
+
+  flex: 0 0 32px;
+  width: 100%;
+}
+
+.dashboard-main {
+  flex: none;
 }
 
 hr {
-  border: 0px;
+  border: 0;
   height: 1px;
   background: #d1d1d1;
 }
 
-table {
-  border-spacing: 2px;
+.panel {
+  max-width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+  padding: 10px;
+  margin: 24px;
 }
 
-.centered {
-  position: relative;
-  width: max-content;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
+.menu {
+  background-color: #ffffff;
+  min-width: 100%;
 }
 
-.horizontally-centered {
-  position: relative;
-  width: max-content;
-  left: 50%;
-  transform: translate(-50%, 0%);
-  text-align: center;
+/* Links inside the dropdown */
+.menu a {
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.menu a:hover {
+  background-color: #f2f2f2;
 }
 
 .button {
@@ -52,75 +86,31 @@ table {
   background-color: #ffffff;
 }
 
-.button:hover {
+.button:hover, .button:focus {
+  text-shadow: 1px 1px 1px #cacaca;
   color: #000000;
 }
 
+.button:active {
+  text-shadow: none;
+}
+
+/* range input style */
 .slider {
   -webkit-appearance: none;
+  -moz-appearance: none;
+
   height: 5px;
   border-radius: 2px;
   background: black;
-  outline: none;
-  -webkit-transition: opacity .15s ease-in-out;
-  transition: opacity .15s ease-in-out;
 }
 
-.panel {
-  max-width: 100%;
-  background-color: #ffffff;
-  border: 1px solid #d1d1d1;
-  border-radius: 4px;
-  padding: 10px;
-  margin: 25px;
+.dashboard-footer {
+  margin-top: auto;
+  flex: 0 0 34px;
 }
 
-.subnav {
-  box-sizing: border-box;
-  background-color: #fff;
-  padding: 5px;
-  height: 34px;
-  width: 100%;
-  position: relative;
-  border-bottom: 1px solid #d1d1d1;
-  color: #000;
-}
-
-.menu {
-  background-color: #ffffff;
-  min-width: 160px;
-  z-index: 1;
-}
-
-/* Links inside the dropdown */
-.menu a {
-  color: black;
-  padding: 12px 16px;
-  text-decoration: none;
-  display: block;
-}
-
-.menu a:hover {
-  background-color: #f2f2f2;
-}
-
-#left, #right {
-  height: 100%;
-  display: inline;
-  float: left;
-  overflow-x: hidden;
-}
-
-#left {
-  position:relative;
-
-  width: 20%;
-  min-height: 100%;
-  background: #f2f2f2;
-  text-align: center;
-}
-
-#right {
+.view {
   width: 80%;
   background: black;
 
@@ -131,21 +121,10 @@ table {
   text-align: center;
 }
 
-/* The split shall be horizontal on mobile. */
-@media only screen and (max-width : 1099px) {
-  #left, #right {
-    width: 100%;
-  }
-
-  #left {
-    height: max-content;
-  }
-}
-
 /* Needed for proper scrolling when canvas doesn't fit on the screen. */
-#canvas-container {
+.canvas-container {
   width: 100%;
-  overflow-y: auto;
+  overflow-y: scroll;
 }
 
 #canvas {
@@ -153,10 +132,13 @@ table {
   cursor: none;
 }
 
-#github-icon {
-  position: relative;
-  display: inline-block;
-  float: right;
-  max-width: 100%;
-  max-height: 100%;
+/* The split shall be horizontal on mobile. */
+@media only screen and (max-width : 1099px) {
+  .view, .dashboard {
+    width: 100%;
+  }
+
+  .dashboard {
+    height: max-content;
+  }
 }

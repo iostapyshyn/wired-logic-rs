@@ -1,165 +1,104 @@
 import * as wasm from "wired-rs";
 
-const ctx = document.getElementById("canvas").getContext('2d');
-const buf = document.createElement("canvas").getContext('2d');
+const DEFAULT_SCALE = 1;
+const DEFAULT_DELAY = 50;
+const DEFAULT_PAUSE = false;
+
+const ctx = document.getElementById("canvas").getContext("2d");
+const buf = document.createElement("canvas").getContext("2d");
 
 const delayRange = document.getElementById("delay-range");
 const delayValue = document.getElementById("delay-value");
 const pauseButton = document.getElementById("pause-button");
 
-let imageDataView = null; // A slice view onto the pixels located in the wasm linear memory.
-
 let circuit = null;
-let width = 0;
-let height = 0;
+let scale = 1;
 
-let pause; setPause(false);
-let delay; setDelay(0);
-let scale; setScale(1);
+let mouse = {
+  hover: false,
+  pos: { x: 0, y: 0 },
+  drag: null,
+};
 
-let lastTime = performance.now();
+let rubber = {
+  on: false,
+  size: 1,
+};
 
-let mousePos = { x: 0, y: 0 }; // mouse position in simulation coordinates
-let dragStart = null; // stores the position of the first click if dragging.
+function Circuit(bytes) {
+  this.circuit = wasm.Circuit.new(bytes);
+  this.width = this.circuit.width();
+  this.height = this.circuit.height();
 
-let hoveringCanvas = false;
+  // As per The Living Standart, the ImageData does not perform a copy
+  // when created with Uint8ClampedArray source.
+  // pixel_view() returns an Uint8ClampedArray pointing at the region
+  // of the wasm memory containing the rgb data; as a result, we save a few calls.
+  this.pixels = new ImageData(this.circuit.pixels_view(), this.width, this.height);
 
-let rubberOn = false;
-var rubberSize = 10;
+  this.pause = false;
+  this.delay = 0; // ms
 
-//
-// Event handlers:
-//
+  let timeoutID = null;
+  let tick = () => {
+    if (!this.pause) {
+      this.circuit.tick();
+    }
+
+    timeoutID = setTimeout(tick, this.delay);
+  };
+
+  tick();
+
+  this.exportDataURL = (type) => {
+    this.circuit.reset();
+
+    const buf = document.createElement("canvas").getContext("2d");
+    buf.canvas.width = this.width;
+    buf.canvas.height = this.height;
+
+    buf.putImageData(this.pixels, 0, 0);
+    return buf.canvas.toDataURL(type);
+  };
+
+  this.destroy = () => {
+    clearTimeout(timeoutID);
+    this.circuit.free();
+  };
+}
 
 function setScale(v) {
   v = v > 0 ? v : 1;
-  if (v != scale) {
-    scale = v;
-    initCanvas();
-  }
+  scale = v;
+  initCanvas();
 }
 
 function setDelay(v) {
-  delay = v;
-  delayRange.value = delay;
-  delayValue.innerHTML = delay + " ms.";
+  circuit.delay = v >= 0 ? v : 0;
+  delayRange.value = circuit.delay;
+  delayValue.innerHTML = circuit.delay + " ms.";
 }
 
 function setPause(v) {
-  pause = v;
-  if (pause) {
+  circuit.pause = v;
+  if (circuit.pause) {
     pauseButton.value = "play_arrow";
   } else {
     pauseButton.value = "pause";
   }
 }
 
-delayRange.addEventListener("input", () => { setDelay(delayRange.value); }, false);
-document.getElementById("zoom-plus").addEventListener("click", () => { setScale(scale+1); }, false);
-document.getElementById("zoom-minus").addEventListener("click", () => { setScale(scale-1); }, false);
+/* Animation frame */
+function frame() {
+  buf.putImageData(circuit.pixels, 0, 0);
+  ctx.drawImage(buf.canvas, 0, 0, circuit.width * scale, circuit.height * scale);
 
-pauseButton.addEventListener("click", () => { setPause(!pause); }, false);
-
-document.addEventListener("keydown", (e) => {
-  switch (e.key) {
-  case " ":
-    setPause(!pause);
-    break;
-  case "+":
-    setScale(scale+1);
-    break;
-  case "-":
-    setScale(scale-1);
-    break;
-  case "Alt":
-    rubberOn = true;
-    dragStart = null;
-    break;
-  case 'z':
-    if (hoveringCanvas) {
-      circuit.fill_rect(mousePos.x, mousePos.y, 2, 2, wasm.Cell.Wire);
-    }
-    break;
-  default:
-    break;
-  }
-});
-
-document.addEventListener("keyup", (e) => {
-  switch (e.key) {
-  case "Alt":
-    rubberOn = false;
-    break;
-  default:
-    break;
-  }
-}, false);
-
-// Canvas related event handlers:
-
-
-canvas.addEventListener("mouseover", () => { hoveringCanvas = true; }, false);
-canvas.addEventListener("mouseout", () => { hoveringCanvas = false; }, false);
-
-document.addEventListener("mousemove", (evt) => {
-  function clamp(num, min, max) {
-    return Math.min(Math.max(num, min), max);
-  }
-
-  var rect = canvas.getBoundingClientRect();
-  mousePos = {
-    x: clamp(Math.floor((evt.clientX - rect.left) / scale), 0, width-1),
-    y: clamp(Math.floor((evt.clientY - rect.top) / scale), 0, height-1),
-  };
-}, false);
-
-document.addEventListener("mousedown", () => {
-  if (hoveringCanvas && !rubberOn) {
-    dragStart = mousePos;
-  }
-}, false);
-
-document.addEventListener("mouseup", () => {
-  if (dragStart === null) {
-    return;
-  }
-
-  if (hoveringCanvas && dragStart === mousePos) {
-    circuit.toggle_pixel(mousePos.x, mousePos.y);
-  } else {
-    const delta = { x: mousePos.x - dragStart.x, y: mousePos.y - dragStart.y };
+  if (mouse.drag !== null) { // if mouse is being dragged
+    const delta = { x: mouse.pos.x - mouse.drag.x, y: mouse.pos.y - mouse.drag.y };
+    const startingPoint = { x: mouse.drag.x, y: mouse.drag.y };
     const endingPoint = {
-      x: Math.abs(delta.x) > Math.abs(delta.y) ? mousePos.x : dragStart.x,
-      y: Math.abs(delta.x) > Math.abs(delta.y) ? dragStart.y : mousePos.y,
-    };
-
-    circuit.toggle_line(dragStart.x, dragStart.y, endingPoint.x, endingPoint.y);
-  }
-
-  dragStart = null;
-}, false);
-
-//
-// Animation:
-//
-
-function loop() {
-  let now = performance.now();
-  if (!pause && now - lastTime > delay) {
-    circuit.tick();
-
-    lastTime = now;
-  }
-
-  buf.putImageData(imageDataView, 0, 0);
-  ctx.drawImage(buf.canvas, 0, 0, width, height, 0, 0, width * scale, height * scale);
-
-  if (dragStart !== null) { // if mouse is being dragged
-    const delta = { x: mousePos.x - dragStart.x, y: mousePos.y - dragStart.y };
-    const startingPoint = { x: dragStart.x, y: dragStart.y };
-    const endingPoint = {
-      x: Math.abs(delta.x) > Math.abs(delta.y) ? mousePos.x : dragStart.x,
-      y: Math.abs(delta.x) > Math.abs(delta.y) ? dragStart.y : mousePos.y,
+      x: Math.abs(delta.x) > Math.abs(delta.y) ? mouse.pos.x : mouse.drag.x,
+      y: Math.abs(delta.x) > Math.abs(delta.y) ? mouse.drag.y : mouse.pos.y,
     };
 
     // A line with inclusive ends:
@@ -173,37 +112,143 @@ function loop() {
     );
 
     ctx.fillRect(endingPoint.x * scale, endingPoint.y * scale, scale, scale);
-  } else if (hoveringCanvas) {
+  } else if (mouse.hover) {
     // Cursor is visible. It could be either a rubber or a dot.
-    if (rubberOn) {
+    if (rubber.on) {
       ctx.beginPath();
       ctx.rect(
-        (mousePos.x - rubberSize/2 + 0.5)*scale,
-        (mousePos.y - rubberSize/2 + 0.5)*scale,
-        (rubberSize) * scale,
-        (rubberSize) * scale
+        (mouse.pos.x - rubber.size/2 + 0.5)*scale,
+        (mouse.pos.y - rubber.size/2 + 0.5)*scale,
+        (rubber.size) * scale,
+        (rubber.size) * scale
       );
       ctx.stroke();
 
       // Apply rubber
-      circuit.fill_rect(
-        mousePos.x-Math.floor(rubberSize/2),
-        mousePos.y-Math.floor(rubberSize/2),
-        rubberSize,
-        rubberSize,
+      circuit.circuit.fill_rect(
+        mouse.pos.x-Math.floor(rubber.size/2),
+        mouse.pos.y-Math.floor(rubber.size/2),
+        rubber.size,
+        rubber.size,
         wasm.Cell.Void,
       );
     } else {
-      ctx.fillRect(mousePos.x * scale, mousePos.y * scale, scale, scale);
+      ctx.fillRect(mouse.pos.x * scale, mouse.pos.y * scale, scale, scale);
     }
   }
 
-  requestAnimationFrame(loop);
+  requestAnimationFrame(frame);
 }
 
+/* Sets the handlers and all necessary DOM interactions.
+ * Is called only once. */
+function initDocument() {
+  function downloadURL(href, download) {
+    var link = document.createElement('a');
+    link.href = href;
+    link.download = download;
+    link.click();
+  }
+
+  delayRange.addEventListener("input", () => { setDelay(delayRange.value); }, false);
+  document.getElementById("zoom-plus").addEventListener("click", () => { setScale(scale+1); }, false);
+  document.getElementById("zoom-minus").addEventListener("click", () => { setScale(scale-1); }, false);
+
+  pauseButton.addEventListener("click", () => { setPause(!pause); }, false);
+
+  document.getElementById("file-open").addEventListener("click", () => {
+    loadFile(initCircuit);
+  }, false);
+
+  document.getElementById("file-save").addEventListener("click", () => {
+    downloadURL(circuit.exportDataURL(), "wired-export.png");
+  }, false);
+
+  document.addEventListener("keydown", (e) => {
+    switch (e.key) {
+    case " ":
+      setPause(!pause);
+      break;
+    case "+":
+      setScale(scale+1);
+      break;
+    case "-":
+      setScale(scale-1);
+      break;
+    case "Alt":
+      rubber.on = true;
+      mouse.drag = null;
+      break;
+    case 'z':
+      if (mouse.hover) {
+        circuit.circuit.fill_rect(mouse.pos.x, mouse.pos.y, 2, 2, wasm.Cell.Wire);
+      }
+      break;
+    default:
+      break;
+    }
+  });
+
+  document.addEventListener("keyup", (e) => {
+    switch (e.key) {
+    case "Alt":
+      rubber.on = false;
+      break;
+    default:
+      break;
+    }
+  }, false);
+
+  ctx.canvas.addEventListener("mouseover", () => { mouse.hover = true; }, false);
+  ctx.canvas.addEventListener("mouseout", () => { mouse.hover = false; }, false);
+
+  document.addEventListener("mousemove", (evt) => {
+    function clamp(num, min, max) {
+      return Math.min(Math.max(num, min), max);
+    }
+
+    var rect = ctx.canvas.getBoundingClientRect();
+    mouse.pos = {
+      x: clamp(Math.floor((evt.clientX - rect.left) / scale), 0, circuit.width-1),
+      y: clamp(Math.floor((evt.clientY - rect.top) / scale), 0, circuit.height-1),
+    };
+  }, false);
+
+  document.addEventListener("mousedown", () => {
+    if (mouse.hover && !rubber.on) {
+      mouse.drag = mouse.pos;
+    }
+  }, false);
+
+  document.addEventListener("mouseup", () => {
+    if (mouse.drag === null) {
+      return;
+    }
+
+    if (mouse.hover && mouse.drag === mouse.pos) {
+      circuit.circuit.toggle_pixel(mouse.pos.x, mouse.pos.y);
+    } else {
+      const delta = { x: mouse.pos.x - mouse.drag.x, y: mouse.pos.y - mouse.drag.y };
+      const endingPoint = {
+        x: Math.abs(delta.x) > Math.abs(delta.y) ? mouse.pos.x : mouse.drag.x,
+        y: Math.abs(delta.x) > Math.abs(delta.y) ? mouse.drag.y : mouse.pos.y,
+      };
+
+      circuit.circuit.toggle_line(mouse.drag.x, mouse.drag.y, endingPoint.x, endingPoint.y);
+    }
+
+    mouse.drag = null;
+  }, false);
+}
+
+/* After each scale change the canvas must be resized, and as a consequence all it's properties are lost.
+ * This function performs resize as well as reinitialization of all canvas properties along with some
+ * additional necessary logic. */
 function initCanvas() {
-  ctx.canvas.width = width * scale;
-  ctx.canvas.height = height * scale;
+  buf.canvas.width = circuit.width;
+  buf.canvas.height = circuit.height;
+  ctx.canvas.width = circuit.width * scale;
+  ctx.canvas.height = circuit.height * scale;
 
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "white";
@@ -211,51 +256,74 @@ function initCanvas() {
 
   switch (scale) {
   case 1:
-    rubberSize = 12;
+    rubber.size = 12;
     break;
   case 2:
-    rubberSize = 6;
+    rubber.size = 6;
     break;
   case 3:
-    rubberSize = 3;
+    rubber.size = 3;
+    break;
+  case 4:
+    rubber.size = 2;
     break;
   default:
-    rubberSize = 1;
+    rubber.size = 1;
     break;
   }
 }
 
-function loadBytes(bytes) {
-  circuit = wasm.Circuit.new(bytes);
-  width = circuit.width();
-  height = circuit.height();
+/* Loads the circuit, sets default initial values. */
+function initCircuit(bytes) {
+  if (circuit)
+    circuit.destroy();
 
-  buf.canvas.width = width;
-  buf.canvas.height = height;
+  circuit = new Circuit(bytes);
 
-  // As per The Living Standart, the ImageData does not perform a copy
-  // when created with Uint8ClampedArray source.
-  // pixel_view() returns an Uint8ClampedArray pointing at the region
-  // of the wasm memory containing the rgb data; as a result, we save a few calls.
-  imageDataView = new ImageData(circuit.pixels_view(), width);
-
-  initCanvas();
-  loop();
+  setPause(DEFAULT_PAUSE);
+  setDelay(DEFAULT_DELAY);
+  setScale(DEFAULT_SCALE);
 }
 
-function loadURL(filePath) {
+function loadURL(filePath, callback) {
   var request = new XMLHttpRequest();
   request.open('GET', filePath, true);
   request.responseType = "arraybuffer";
 
-  request.onreadystatechange = function() {
+  request.onreadystatechange = () => {
     if (request.response) {
       const bytes = new Uint8Array(request.response);
-      loadBytes(bytes);
+
+      callback(bytes);
     }
   };
 
   request.send(null);
 }
 
-loadURL("examples/input.gif");
+function loadFile(callback) {
+  const fileInput = document.createElement('input');
+  fileInput.type="file";
+  fileInput.addEventListener("change", (evt) => {
+    const file = evt.target.files[0];
+
+    let reader = new FileReader();
+    reader.onload = (evt) => {
+      const bytes = new Uint8Array(evt.target.result);
+
+      callback(bytes);
+    };
+
+    reader.readAsArrayBuffer(file);
+  }, false);
+
+  fileInput.click();
+}
+
+// Entry point: load the default example
+loadURL("examples/wired-export.png", (bytes) => {
+  initCircuit(bytes);
+  initDocument();
+
+  requestAnimationFrame(frame);
+});

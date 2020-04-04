@@ -102,6 +102,14 @@ impl Circuit {
         );
     }
 
+    pub fn reset(&mut self) {
+        for i in &mut self.circuit.state {
+            *i = 0;
+        }
+
+        self.circuit.render(&mut self.source);
+    }
+
     pub fn width(&self) -> u32 {
         self.source.width()
     }
