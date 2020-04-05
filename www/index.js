@@ -91,12 +91,9 @@ function setPause(v) {
 /* Animation frame */
 function frame() {
   buf.putImageData(circuit.pixels, 0, 0);
-  ctx.drawImage(buf.canvas, 0, 0, circuit.width * scale, circuit.height * scale);
 
-  // Draw hollow rects if the pixels are going to be toggled off.
-  let rect = ctx.fillRect.bind(ctx);
-  if (circuit.circuit.at((mouse.drag || mouse.pos).x, (mouse.drag || mouse.pos).y) == wasm.Cell.Wire)
-    rect = ctx.rect.bind(ctx);
+  ctx.clearRect(0, 0, circuit.width * scale, circuit.height * scale);
+  ctx.drawImage(buf.canvas, 0, 0, circuit.width * scale, circuit.height * scale);
 
   ctx.beginPath();
   if (mouse.drag !== null) { // if mouse is being dragged
@@ -107,22 +104,21 @@ function frame() {
       y: Math.abs(delta.x) > Math.abs(delta.y) ? mouse.drag.y : mouse.pos.y,
     };
 
-
     // A line with inclusive ends:
-    rect(startingPoint.x * scale, startingPoint.y * scale, scale, scale);
+    ctx.rect(startingPoint.x * scale, startingPoint.y * scale, scale, scale);
 
-    rect(
+    ctx.rect(
       (startingPoint.x) * scale,
       (startingPoint.y) * scale,
       (endingPoint.x - startingPoint.x + 1) * scale,
       (endingPoint.y - startingPoint.y + 1) * scale
     );
 
-    rect(endingPoint.x * scale, endingPoint.y * scale, scale, scale);
+    ctx.rect(endingPoint.x * scale, endingPoint.y * scale, scale, scale);
   } else if (mouse.hover) {
     // Cursor is visible. It could be either a rubber or a dot.
     if (rubber.on) {
-      ctx.rect(
+      ctx.strokeRect(
         (mouse.pos.x - rubber.size/2 + 0.5)*scale,
         (mouse.pos.y - rubber.size/2 + 0.5)*scale,
         (rubber.size) * scale,
@@ -138,11 +134,14 @@ function frame() {
         wasm.Cell.Void,
       );
     } else {
-      rect(mouse.pos.x * scale, mouse.pos.y * scale, scale, scale);
+      ctx.rect(mouse.pos.x * scale, mouse.pos.y * scale, scale, scale);
     }
   }
 
-  ctx.stroke();
+  // Draw hollow rects if the pixels are going to be toggled off.
+  if (circuit.circuit.at((mouse.drag || mouse.pos).x, (mouse.drag || mouse.pos).y) == wasm.Cell.Wire)
+    ctx.stroke();
+  else ctx.fill();
 
   requestAnimationFrame(frame);
 }
@@ -162,6 +161,16 @@ function initDocument() {
   document.getElementById("zoom-minus").addEventListener("click", () => { setScale(scale-1); }, false);
 
   pauseButton.addEventListener("click", () => { setPause(!pause); }, false);
+
+  document.getElementById("file-new").addEventListener("click", () => {
+    buf.canvas.width = 100;
+    buf.canvas.height = 100;
+    buf.canvas.toBlob(blob => {
+      blob.arrayBuffer().then(buffer => {
+        initCircuit(new Uint8Array(buffer));
+      });
+    });
+  }, false);
 
   document.getElementById("file-open").addEventListener("click", () => {
     loadFile(initCircuit);

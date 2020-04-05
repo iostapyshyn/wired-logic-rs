@@ -25,7 +25,14 @@ pub struct Circuit {
 
 #[wasm_bindgen]
 impl Circuit {
-    pub fn new(data: &[u8]) -> Self {
+    pub fn new(w: u32, h: u32) -> Self {
+        let image = image::RgbaImage::from_pixel(w, h, wired_logic::VOID);
+        let circuit = wired_logic::Circuit::new(&image);
+
+        Self { circuit, image }
+    }
+
+    pub fn from_image(data: &[u8]) -> Self {
         let image = image::load_from_memory(data)
             .unwrap()
             .as_rgba8()
