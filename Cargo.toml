@@ -1,5 +1,5 @@
 [package]
-name = "wired-rs"
+name = "wirs"
 version = "0.1.2"
 authors = ["iostapyshyn"]
 edition = "2018"

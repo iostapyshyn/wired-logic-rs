@@ -1,8 +1,9 @@
-import * as wasm from "wired-rs";
+import * as wasm from "wirs";
 
 const DEFAULT_SCALE = 1;
 const DEFAULT_DELAY = 50;
 const DEFAULT_PAUSE = false;
+const DEFAULT_URL = "examples/7seg.png";
 
 const ctx = document.getElementById("canvas").getContext("2d");
 const buf = document.createElement("canvas").getContext("2d");
@@ -321,7 +322,7 @@ function loadFile(callback) {
 }
 
 // Entry point: load the default example
-loadURL("examples/wired-export.png", (bytes) => {
+loadURL(DEFAULT_URL, (bytes) => {
   initCircuit(bytes);
   initDocument();
 

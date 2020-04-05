@@ -1,18 +1,12 @@
 {
-  "name": "www",
-  "version": "1.0.0",
-  "description": "",
-  "main": "webpack.config.js",
   "scripts": {
+    "wasm-pack": "wasm-pack build",
     "serve": "webpack-dev-server",
     "bundle": "webpack",
-    "clean": "rm -rf node_modules/"
+    "clean": "rm -rf node_modules/ pkg/ target/"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "wired-rs": "file:../pkg"
+    "wirs": "file:./pkg"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^5.1.1",
