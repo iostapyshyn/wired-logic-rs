@@ -52,13 +52,12 @@ function Circuit(bytes) {
   tick();
 
   this.exportDataURL = (type) => {
-    this.circuit.reset();
-
     const buf = document.createElement("canvas").getContext("2d");
     buf.canvas.width = this.width;
     buf.canvas.height = this.height;
 
-    buf.putImageData(this.pixels, 0, 0);
+    let imageData = new ImageData(this.circuit.export(), this.width, this.height);
+    buf.putImageData(imageData, 0, 0);
     return buf.canvas.toDataURL(type);
   };
 
@@ -94,6 +93,12 @@ function frame() {
   buf.putImageData(circuit.pixels, 0, 0);
   ctx.drawImage(buf.canvas, 0, 0, circuit.width * scale, circuit.height * scale);
 
+  // Draw hollow rects if the pixels are going to be toggled off.
+  let rect = ctx.fillRect.bind(ctx);
+  if (circuit.circuit.at((mouse.drag || mouse.pos).x, (mouse.drag || mouse.pos).y) == wasm.Cell.Wire)
+    rect = ctx.rect.bind(ctx);
+
+  ctx.beginPath();
   if (mouse.drag !== null) { // if mouse is being dragged
     const delta = { x: mouse.pos.x - mouse.drag.x, y: mouse.pos.y - mouse.drag.y };
     const startingPoint = { x: mouse.drag.x, y: mouse.drag.y };
@@ -102,28 +107,27 @@ function frame() {
       y: Math.abs(delta.x) > Math.abs(delta.y) ? mouse.drag.y : mouse.pos.y,
     };
 
-    // A line with inclusive ends:
-    ctx.fillRect(startingPoint.x * scale, startingPoint.y * scale, scale, scale);
 
-    ctx.fillRect(
+    // A line with inclusive ends:
+    rect(startingPoint.x * scale, startingPoint.y * scale, scale, scale);
+
+    rect(
       (startingPoint.x) * scale,
       (startingPoint.y) * scale,
       (endingPoint.x - startingPoint.x + 1) * scale,
       (endingPoint.y - startingPoint.y + 1) * scale
     );
 
-    ctx.fillRect(endingPoint.x * scale, endingPoint.y * scale, scale, scale);
+    rect(endingPoint.x * scale, endingPoint.y * scale, scale, scale);
   } else if (mouse.hover) {
     // Cursor is visible. It could be either a rubber or a dot.
     if (rubber.on) {
-      ctx.beginPath();
       ctx.rect(
         (mouse.pos.x - rubber.size/2 + 0.5)*scale,
         (mouse.pos.y - rubber.size/2 + 0.5)*scale,
         (rubber.size) * scale,
         (rubber.size) * scale
       );
-      ctx.stroke();
 
       // Apply rubber
       circuit.circuit.fill_rect(
@@ -134,9 +138,11 @@ function frame() {
         wasm.Cell.Void,
       );
     } else {
-      ctx.fillRect(mouse.pos.x * scale, mouse.pos.y * scale, scale, scale);
+      rect(mouse.pos.x * scale, mouse.pos.y * scale, scale, scale);
     }
   }
+
+  ctx.stroke();
 
   requestAnimationFrame(frame);
 }
@@ -235,7 +241,12 @@ function initDocument() {
         y: Math.abs(delta.x) > Math.abs(delta.y) ? mouse.drag.y : mouse.pos.y,
       };
 
-      circuit.circuit.toggle_line(mouse.drag.x, mouse.drag.y, endingPoint.x, endingPoint.y);
+      // Toggle the line depending on the starting pixel
+      let cell = wasm.Cell.Wire;
+      if (circuit.circuit.at(mouse.drag.x, mouse.drag.y) == wasm.Cell.Wire)
+        cell = wasm.Cell.Void;
+
+      circuit.circuit.draw_line(mouse.drag.x, mouse.drag.y, endingPoint.x, endingPoint.y, cell);
     }
 
     mouse.drag = null;

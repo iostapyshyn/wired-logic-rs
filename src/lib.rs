@@ -20,30 +20,30 @@ impl Into<image::Rgba<u8>> for Cell {
 #[wasm_bindgen]
 pub struct Circuit {
     circuit: wired_logic::Circuit,
-    source: image::RgbaImage,
+    image: image::RgbaImage,
 }
 
 #[wasm_bindgen]
 impl Circuit {
     pub fn new(data: &[u8]) -> Self {
-        let source = image::load_from_memory(data)
+        let image = image::load_from_memory(data)
             .unwrap()
             .as_rgba8()
             .unwrap()
             .to_owned();
-        let circuit = wired_logic::Circuit::new(&source);
+        let circuit = wired_logic::Circuit::new(&image);
 
-        Self { circuit, source }
+        Self { circuit, image }
     }
 
     pub fn tick(&mut self) {
         self.circuit.step();
-        self.circuit.render(&mut self.source);
+        self.circuit.render(&mut self.image);
     }
 
     pub fn at(&self, x: u32, y: u32) -> Cell {
         for i in wired_logic::CHARGE.iter() {
-            if self.source.get_pixel(x, y) == i {
+            if self.image.get_pixel(x, y) == i {
                 return Cell::Wire;
             }
         }
@@ -52,29 +52,29 @@ impl Circuit {
     }
 
     pub fn pixels_view(&mut self) -> js_sys::Uint8ClampedArray {
-        unsafe { js_sys::Uint8ClampedArray::view(&self.source) }
+        unsafe { js_sys::Uint8ClampedArray::view(&self.image) }
     }
 
     pub fn draw_pixel(&mut self, x: u32, y: u32, cell: Cell) {
-        self.source.put_pixel(x, y, cell.into());
-        self.circuit.update(&self.source);
+        self.image.put_pixel(x, y, cell.into());
+        self.circuit.update(&self.image);
     }
 
     pub fn draw_line(&mut self, start_x: f32, start_y: f32, end_x: f32, end_y: f32, cell: Cell) {
         imageproc::drawing::draw_line_segment_mut(
-            &mut self.source,
+            &mut self.image,
             (start_x, start_y),
             (end_x, end_y),
             cell.into(),
         );
 
-        self.circuit.update(&self.source);
+        self.circuit.update(&self.image);
     }
 
     pub fn fill_rect(&mut self, x: i32, y: i32, w: u32, h: u32, cell: Cell) {
         let rect = imageproc::rect::Rect::at(x, y).of_size(w, h);
-        imageproc::drawing::draw_filled_rect_mut(&mut self.source, rect, cell.into());
-        self.circuit.update(&self.source);
+        imageproc::drawing::draw_filled_rect_mut(&mut self.image, rect, cell.into());
+        self.circuit.update(&self.image);
     }
 
     pub fn toggle_pixel(&mut self, x: u32, y: u32) {
@@ -86,20 +86,17 @@ impl Circuit {
         self.draw_pixel(x, y, cell);
     }
 
-    /// Toggles the line based on the starting pixel;
-    pub fn toggle_line(&mut self, start_x: u32, start_y: u32, end_x: u32, end_y: u32) {
-        let cell = match self.at(start_x, start_y) {
-            Cell::Wire => Cell::Void,
-            Cell::Void => Cell::Wire,
-        };
+    pub fn export(&mut self) -> js_sys::Uint8ClampedArray {
+        let saved_state = self.circuit.state.clone();
+        self.reset();
 
-        self.draw_line(
-            start_x as f32,
-            start_y as f32,
-            end_x as f32,
-            end_y as f32,
-            cell,
-        );
+        let pixels =
+            js_sys::Uint8ClampedArray::new(&wasm_bindgen::JsValue::from(self.pixels_view()));
+
+        self.circuit.state = saved_state;
+        self.circuit.render(&mut self.image);
+
+        pixels
     }
 
     pub fn reset(&mut self) {
@@ -107,14 +104,14 @@ impl Circuit {
             *i = 0;
         }
 
-        self.circuit.render(&mut self.source);
+        self.circuit.render(&mut self.image);
     }
 
     pub fn width(&self) -> u32 {
-        self.source.width()
+        self.image.width()
     }
 
     pub fn height(&self) -> u32 {
-        self.source.height()
+        self.image.height()
     }
 }
