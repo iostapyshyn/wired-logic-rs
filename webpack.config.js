@@ -9,7 +9,8 @@ module.exports = {
   },
   plugins: [
     new CopyPlugin([
-      { from: 'www', ignore: [ '.DS_Store' ] },
+      { from: 'www/', to: '' },
+      { from: 'examples/', to: 'examples/' },
     ]),
   ],
   devServer: {
