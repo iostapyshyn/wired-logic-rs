@@ -1,5 +1,6 @@
 extern crate image;
-mod parser;
+pub mod parser;
+pub mod render;
 
 use image::RgbaImage;
 

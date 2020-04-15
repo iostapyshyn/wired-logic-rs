@@ -142,3 +142,25 @@ hr {
     height: max-content;
   }
 }
+
+.popup-container {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  display: none;
+  background-color: rgba(22,22,22,0.5);
+}
+
+.new-popup {
+  text-align: center;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  margin: 0px;
+}
+
+.new-input {
+  width: 15%;
+}

@@ -1,3 +1,6 @@
+extern crate console_error_panic_hook;
+use std::panic;
+
 use wasm_bindgen::prelude::*;
 
 mod wired_logic;
@@ -25,14 +28,9 @@ pub struct Circuit {
 
 #[wasm_bindgen]
 impl Circuit {
-    pub fn new(w: u32, h: u32) -> Self {
-        let image = image::RgbaImage::from_pixel(w, h, wired_logic::VOID);
-        let circuit = wired_logic::Circuit::new(&image);
+    pub fn new(data: &[u8]) -> Self {
+        console_error_panic_hook::set_once();
 
-        Self { circuit, image }
-    }
-
-    pub fn from_image(data: &[u8]) -> Self {
         let image = image::load_from_memory(data)
             .unwrap()
             .as_rgba8()
@@ -49,6 +47,10 @@ impl Circuit {
     }
 
     pub fn at(&self, x: u32, y: u32) -> Cell {
+        if x >= self.image.width() || y >= self.image.height() {
+            return Cell::Void;
+        }
+
         for i in wired_logic::CHARGE.iter() {
             if self.image.get_pixel(x, y) == i {
                 return Cell::Wire;

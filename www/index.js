@@ -162,14 +162,33 @@ function initDocument() {
 
   pauseButton.addEventListener("click", () => { setPause(!pause); }, false);
 
-  document.getElementById("file-new").addEventListener("click", () => {
-    buf.canvas.width = 100;
-    buf.canvas.height = 100;
+  document.getElementById("new-cancel").addEventListener("click", () => {
+    document.getElementById("popup-container").style.display = "none";
+  }, false);
+  document.getElementById("new-proceed").addEventListener("click", () => {
+    document.getElementById("popup-container").style.display = "none";
+
+    const width = document.getElementById("new-width").value;
+    const height = document.getElementById("new-height").value;
+
+    if (isNaN(width) || width == 0 || isNaN(height) || height == 0) {
+      alert("Wrong dimensions. Please try again.");
+      return;
+    }
+
+    buf.canvas.width = width;
+    buf.canvas.height = height;
+
+    buf.clearRect(0, 0, circuit.width, circuit.height);
     buf.canvas.toBlob(blob => {
       blob.arrayBuffer().then(buffer => {
         initCircuit(new Uint8Array(buffer));
       });
     });
+  }, false);
+
+  document.getElementById("file-new").addEventListener("click", () => {
+    document.getElementById("popup-container").style.display = "block";
   }, false);
 
   document.getElementById("file-open").addEventListener("click", () => {
