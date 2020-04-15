@@ -5,6 +5,8 @@ use wasm_bindgen::prelude::*;
 
 mod wired_logic;
 
+use wired_logic::render::RenderFrames;
+
 #[wasm_bindgen]
 pub enum Cell {
     Void,
@@ -114,6 +116,21 @@ impl Circuit {
         }
 
         self.circuit.render(&mut self.image);
+    }
+
+    pub fn render_gif(&mut self, delay: u64) -> js_sys::Uint8Array {
+        let frames = self
+            .circuit
+            .render_frames(&self.image, std::time::Duration::from_millis(delay));
+
+        let mut buf = Vec::<u8>::new();
+
+        {
+            let mut encoder = image::gif::Encoder::new(&mut buf);
+            encoder.encode_frames(frames).unwrap();
+        }
+
+        js_sys::Uint8Array::from(&buf[..])
     }
 
     pub fn width(&self) -> u32 {

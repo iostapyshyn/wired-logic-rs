@@ -199,6 +199,19 @@ function initDocument() {
     downloadURL(circuit.exportDataURL(), "wired-export.png");
   }, false);
 
+  document.getElementById("file-export").addEventListener("click", () => {
+    function typedArrayToURL(typedArray, mimeType) {
+      return URL.createObjectURL(new Blob([typedArray.buffer], {type: mimeType}));
+    }
+
+    if (confirm("This operation can take some time on large simulations.\n" +
+                "Are you sure you want to proceed?")) {
+      const array = circuit.circuit.render_gif(circuit.delay);
+      const url = typedArrayToURL(array, "image/gif");
+      downloadURL(url, "wired-export.gif");
+    }
+  }, false);
+
   document.addEventListener("keydown", (e) => {
     switch (e.key) {
     case " ":
@@ -360,8 +373,15 @@ function loadFile(callback) {
   fileInput.click();
 }
 
+let windowURL = new URL(window.location.href);
+let url = windowURL.searchParams.get("url");
+
+if (url == null) {
+  url = DEFAULT_URL;
+}
+
 // Entry point: load the default example
-loadURL(DEFAULT_URL, (bytes) => {
+loadURL(url, (bytes) => {
   initCircuit(bytes);
   initDocument();
 
