@@ -206,7 +206,7 @@ function initDocument() {
 
     if (confirm("This operation can take some time on large simulations.\n" +
                 "Are you sure you want to proceed?")) {
-      const array = circuit.circuit.render_gif(circuit.delay);
+      const array = circuit.circuit.render_gif(BigInt(circuit.delay));
       const url = typedArrayToURL(array, "image/gif");
       downloadURL(url, "wired-export.gif");
     }
