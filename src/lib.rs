@@ -1,10 +1,8 @@
 extern crate console_error_panic_hook;
-use std::panic;
 
 use wasm_bindgen::prelude::*;
 
 mod wired_logic;
-
 use wired_logic::render::RenderFrames;
 
 #[wasm_bindgen]
