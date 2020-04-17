@@ -32,8 +32,8 @@ Compilation
 -----------
 After cloning and navigating into the repo:
 ```sh
-$ npm install
 $ wasm-pack build
+$ npm install
 
 $ npm run serve     # to start the webpack dev server
 $ npm run bundle    # to create the production bundle
