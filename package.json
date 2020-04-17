@@ -6,7 +6,7 @@
     "clean": "rm -rf node_modules/ pkg/ target/"
   },
   "dependencies": {
-    "wirs": "file:./pkg"
+    "wired-logic-rs": "file:./pkg"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^5.1.1",

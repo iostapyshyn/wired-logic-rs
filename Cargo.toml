@@ -1,5 +1,5 @@
 [package]
-name = "wirs"
+name = "wired-logic-rs"
 version = "0.1.2"
 authors = ["iostapyshyn"]
 edition = "2018"

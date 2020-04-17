@@ -1,4 +1,4 @@
-import * as wasm from "wirs";
+import * as wasm from "wired-logic-rs";
 
 const DEFAULT_SCALE = 1;
 const DEFAULT_DELAY = 50;
