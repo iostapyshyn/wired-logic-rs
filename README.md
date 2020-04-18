@@ -1,5 +1,5 @@
 # [wired-logic-rs](https://iostapyshyn.github.io/wired-logic)
-![building](https://github.com/iostapyshyn/wired-logic-rs/workflows/bundle/badge.svg)
+![building](https://github.com/iostapyshyn/wired-logic-rs/workflows/building/badge.svg)
 
 A pixel-based digital circuitry simulator, now powered by Rust and WebAssembly. Inspired by
 [wired-logic](https://github.com/martinkirsche/wired-logic).
