@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "wasm-small": "wasm-pack build -- --no-default-features --features wee_alloc",
+    "wasm-small": "wasm-pack build -- --no-default-features",
     "serve": "webpack-dev-server",
     "bundle": "webpack",
     "clean": "rm -rf node_modules/ pkg/ target/"

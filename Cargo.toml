@@ -33,5 +33,5 @@ js-sys = "0.3.37"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
-opt-level = "z" # or "s"
+opt-level = "s"
 lto = "fat"

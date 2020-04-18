@@ -160,7 +160,7 @@ function initDocument() {
   document.getElementById("zoom-plus").addEventListener("click", () => { setScale(scale+1); }, false);
   document.getElementById("zoom-minus").addEventListener("click", () => { setScale(scale-1); }, false);
 
-  pauseButton.addEventListener("click", () => { setPause(!pause); }, false);
+  pauseButton.addEventListener("click", () => { setPause(!circuit.pause); }, false);
 
   document.getElementById("new-cancel").addEventListener("click", () => {
     document.getElementById("popup-container").style.display = "none";
@@ -215,7 +215,7 @@ function initDocument() {
   document.addEventListener("keydown", (e) => {
     switch (e.key) {
     case " ":
-      setPause(!pause);
+      setPause(!circuit.pause);
       break;
     case "+":
       setScale(scale+1);
