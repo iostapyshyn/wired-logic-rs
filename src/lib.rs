@@ -1,9 +1,13 @@
-extern crate console_error_panic_hook;
-
 use wasm_bindgen::prelude::*;
 
 mod wired_logic;
 use wired_logic::render::RenderFrames;
+
+// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+// allocator.
+#[cfg(feature = "wee_alloc")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
 pub enum Cell {
@@ -29,6 +33,7 @@ pub struct Circuit {
 #[wasm_bindgen]
 impl Circuit {
     pub fn new(data: &[u8]) -> Self {
+        #[cfg(feature = "console_error_panic_hook")]
         console_error_panic_hook::set_once();
 
         let image = image::load_from_memory(data)
