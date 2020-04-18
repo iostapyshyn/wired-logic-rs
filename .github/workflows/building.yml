@@ -29,5 +29,5 @@ jobs:
     - name: Run a multi-line script
       run: |
         wasm-pack build
-        npm run install
+        npm install
         npm run bundle
