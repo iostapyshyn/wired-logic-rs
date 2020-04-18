@@ -116,10 +116,10 @@ impl Circuit {
         self.circuit.render(&mut self.image);
     }
 
-    pub fn render_gif(&mut self, delay: u64) -> js_sys::Uint8Array {
+    pub fn render_gif(&mut self, delay: u32) -> js_sys::Uint8Array {
         let frames = self
             .circuit
-            .render_frames(&self.image, std::time::Duration::from_millis(delay));
+            .render_frames(&self.image, std::time::Duration::from_millis(delay as u64));
 
         let mut buf = Vec::<u8>::new();
 
