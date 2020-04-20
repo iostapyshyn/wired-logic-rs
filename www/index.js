@@ -223,7 +223,7 @@ function initDocument() {
     case "-":
       setScale(scale-1);
       break;
-    case "Alt":
+    case "x":
       rubber.on = true;
       mouse.drag = null;
       break;
@@ -239,7 +239,7 @@ function initDocument() {
 
   document.addEventListener("keyup", (e) => {
     switch (e.key) {
-    case "Alt":
+    case "x":
       rubber.on = false;
       break;
     default:
