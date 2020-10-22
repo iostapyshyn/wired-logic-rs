@@ -1,0 +1,166 @@
+html, body {
+  font-family: 'Quicksand', sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Split the screen vertically on desktop, dashboard on the left side
+ * canvas on the right side */
+.dashboard, .view {
+  float: left;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+.dashboard {
+  width: 20%;
+  min-height: 100%;
+  background: #f2f2f2;
+  text-align: center;
+
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.dashboard-header {
+  box-sizing: border-box;
+  border-bottom: 1px solid #d1d1d1;
+  background: #fff;
+  color: black;
+  padding: 5px;
+
+  flex: 0 0 32px;
+  width: 100%;
+}
+
+.dashboard-main {
+  flex: none;
+}
+
+hr {
+  border: 0;
+  height: 1px;
+  background: #d1d1d1;
+}
+
+.panel {
+  max-width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+  padding: 10px;
+  margin: 24px;
+}
+
+.menu {
+  background-color: #ffffff;
+  min-width: 100%;
+}
+
+/* Links inside the dropdown */
+.menu a {
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.menu a:hover {
+  background-color: #f2f2f2;
+}
+
+.button {
+  font-size: 100%;
+  padding: .5em 1em;
+  border: none transparent;
+  text-decoration: none;
+  width: min-content;
+  height: min-content;
+
+  color: #202020;
+
+  /*border: 1px solid #d1d1d1;*/
+  /*border-radius: 2px;*/
+
+  background-color: #ffffff;
+}
+
+.button:hover, .button:focus {
+  text-shadow: 1px 1px 1px #cacaca;
+  color: #000000;
+}
+
+.button:active {
+  text-shadow: none;
+}
+
+/* range input style */
+.slider {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  height: 5px;
+  border-radius: 2px;
+  background: black;
+}
+
+.dashboard-footer {
+  margin-top: auto;
+  flex: 0 0 34px;
+}
+
+.view {
+  width: 80%;
+  background: black;
+
+  /* Centering of the content. */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Needed for proper scrolling when canvas doesn't fit on the screen. */
+.canvas-container {
+  width: 100%;
+  overflow-y: scroll;
+}
+
+#canvas {
+  border: 1px solid #1f1f1f;
+  cursor: none;
+}
+
+/* The split shall be horizontal on mobile. */
+@media only screen and (max-width : 1099px) {
+  .view, .dashboard {
+    width: 100%;
+  }
+
+  .dashboard {
+    height: max-content;
+  }
+}
+
+.popup-container {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  display: none;
+  background-color: rgba(22,22,22,0.5);
+}
+
+.new-popup {
+  text-align: center;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  margin: 0px;
+}
+
+.new-input {
+  width: 15%;
+}
