@@ -5,7 +5,7 @@ module.exports = {
   entry: './www/bootstrap.js',
   output: {
     filename: 'bootstrap.js',
-    path: path.resolve(__dirname, 'docs'),
+    path: path.resolve(__dirname, 'dist'),
   },
   plugins: [
     new CopyPlugin([
