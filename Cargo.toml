@@ -3,6 +3,9 @@ name = "wired-logic-rs"
 version = "0.1.2"
 authors = ["iostapyshyn"]
 edition = "2018"
+description = "A pixel-based digital circuitry simulator powered by Rust and WebAssembly."
+license = "MIT"
+repository = "https://github.com/iostapyshyn/wired-logic-rs/"
 
 [lib]
 crate-type = ["cdylib"]
