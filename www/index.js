@@ -179,7 +179,8 @@ function initDocument() {
     buf.canvas.width = width;
     buf.canvas.height = height;
 
-    buf.clearRect(0, 0, circuit.width, circuit.height);
+    buf.fillStyle = "#000000";
+    buf.fillRect(0, 0, width, height);
     buf.canvas.toBlob(blob => {
       new Response(blob).arrayBuffer().then(buffer => {
         initCircuit(new Uint8Array(buffer));
