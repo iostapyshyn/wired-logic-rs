@@ -1,7 +1,7 @@
 {
   "scripts": {
     "serve": "webpack-dev-server",
-    "bundle": "webpack",
+    "bundle": "webpack"
   },
   "dependencies": {
     "wired-logic-rs": "file:./pkg"
