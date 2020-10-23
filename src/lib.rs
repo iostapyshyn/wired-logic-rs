@@ -36,11 +36,7 @@ impl Circuit {
         #[cfg(feature = "console_error_panic_hook")]
         console_error_panic_hook::set_once();
 
-        let image = image::load_from_memory(data)
-            .unwrap()
-            .as_rgba8()
-            .unwrap()
-            .to_owned();
+        let image = image::load_from_memory(data).unwrap().into_rgba();
         let circuit = wired_logic::Circuit::new(&image);
 
         Self { circuit, image }
