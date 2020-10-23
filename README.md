@@ -31,7 +31,7 @@ A transistor gets created by drawing an arbitrarily rotated T-shape and, you gue
 Compilation
 -----------
 ```sh
-$ wasm-pack build
+$ wasm-pack build   # add `-- --no-default-features` for small binary
 $ npm install
 
 $ npm run serve     # to start the webpack dev server
