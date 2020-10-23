@@ -26,6 +26,7 @@ let rubber = {
   size: 1,
 };
 
+// Circuit class
 function Circuit(bytes) {
   this.circuit = wasm.Circuit.new(bytes);
   this.width = this.circuit.width();
@@ -374,17 +375,22 @@ function loadFile(callback) {
   fileInput.click();
 }
 
-let windowURL = new URL(window.location.href);
-let url = windowURL.searchParams.get("url");
+// Entry point: load either the image specified in the url parameter
+// or the default example
+function run() {
+  let windowURL = new URL(window.location.href);
+  let url = windowURL.searchParams.get("url");
 
-if (url == null) {
-  url = DEFAULT_URL;
+  if (url == null) {
+    url = DEFAULT_URL;
+  }
+
+  loadURL(url, (bytes) => {
+    initCircuit(bytes);
+    initDocument();
+
+    requestAnimationFrame(frame);
+  });
 }
 
-// Entry point: load the default example
-loadURL(url, (bytes) => {
-  initCircuit(bytes);
-  initDocument();
-
-  requestAnimationFrame(frame);
-});
+run();
