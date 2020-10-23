@@ -16,7 +16,7 @@ jobs:
 
     - name: Build and bundle
       run: |
-        wasm-pack build
+        wasm-pack build -- --no-default-features
         npm install
         npm run bundle
 

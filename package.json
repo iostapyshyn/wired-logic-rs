@@ -1,9 +1,7 @@
 {
   "scripts": {
-    "wasm-small": "wasm-pack build -- --no-default-features",
     "serve": "webpack-dev-server",
     "bundle": "webpack",
-    "clean": "rm -rf node_modules/ pkg/ target/"
   },
   "dependencies": {
     "wired-logic-rs": "file:./pkg"
