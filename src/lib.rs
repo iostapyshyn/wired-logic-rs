@@ -129,7 +129,7 @@ impl Circuit {
         let mut buf = Vec::<u8>::new();
 
         {
-            let mut encoder = image::gif::Encoder::new(&mut buf);
+            let mut encoder = image::gif::GifEncoder::new(&mut buf);
             encoder.encode_frames(frames).unwrap();
         }
 
