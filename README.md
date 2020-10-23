@@ -4,6 +4,8 @@
 A pixel-based digital circuitry simulator, now powered by Rust and WebAssembly. Inspired by
 [wired-logic](https://github.com/martinkirsche/wired-logic).
 
+![16-bit Carry-Select Adder](https://i.imgur.com/Wz2h93n.gif)
+
 How does it work?
 -----------------
 _[Original explanation by martinkirsche](https://github.com/martinkirsche/wired-logic/blob/master/readme.md):_
