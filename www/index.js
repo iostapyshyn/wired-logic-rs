@@ -27,45 +27,47 @@ let rubber = {
 };
 
 // Circuit class
-function Circuit(bytes) {
-  this.circuit = wasm.Circuit.new(bytes);
-  this.width = this.circuit.width();
-  this.height = this.circuit.height();
+class Circuit {
+  constructor(bytes) {
+    this.circuit = wasm.Circuit.new(bytes);
+    this.width = this.circuit.width();
+    this.height = this.circuit.height();
 
-  // As per The Living Standart, the ImageData does not perform a copy
-  // when created with Uint8ClampedArray source.
-  // pixel_view() returns an Uint8ClampedArray pointing at the region
-  // of the wasm memory containing the rgb data; as a result, we save a few calls.
-  this.pixels = new ImageData(this.circuit.pixels_view(), this.width, this.height);
+    // As per The Living Standart, the ImageData does not perform a copy
+    // when created with Uint8ClampedArray source.
+    // pixel_view() returns an Uint8ClampedArray pointing at the region
+    // of the wasm memory containing the rgb data; as a result, we save a few calls.
+    this.pixels = new ImageData(this.circuit.pixels_view(), this.width, this.height);
 
-  this.pause = false;
-  this.delay = 0; // ms
+    this.pause = false;
+    this.delay = 0; // ms
 
-  let timeoutID = null;
-  let tick = () => {
-    if (!this.pause) {
-      this.circuit.tick();
-    }
+    let timeoutID = null;
+    let tick = () => {
+      if (!this.pause) {
+        this.circuit.tick();
+      }
 
-    timeoutID = setTimeout(tick, this.delay);
-  };
+      timeoutID = setTimeout(tick, this.delay);
+    };
 
-  tick();
+    tick();
 
-  this.exportDataURL = (type) => {
-    const buf = document.createElement("canvas").getContext("2d");
-    buf.canvas.width = this.width;
-    buf.canvas.height = this.height;
+    this.exportDataURL = (type) => {
+      const buf = document.createElement("canvas").getContext("2d");
+      buf.canvas.width = this.width;
+      buf.canvas.height = this.height;
 
-    let imageData = new ImageData(this.circuit.export(), this.width, this.height);
-    buf.putImageData(imageData, 0, 0);
-    return buf.canvas.toDataURL(type);
-  };
+      let imageData = new ImageData(this.circuit.export(), this.width, this.height);
+      buf.putImageData(imageData, 0, 0);
+      return buf.canvas.toDataURL(type);
+    };
 
-  this.destroy = () => {
-    clearTimeout(timeoutID);
-    this.circuit.free();
-  };
+    this.destroy = () => {
+      clearTimeout(timeoutID);
+      this.circuit.free();
+    };
+  }
 }
 
 function setScale(v) {
